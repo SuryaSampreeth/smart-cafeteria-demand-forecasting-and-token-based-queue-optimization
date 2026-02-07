@@ -2,20 +2,22 @@ const User = require('../models/User');
 const Booking = require('../models/Booking');
 const Slot = require('../models/Slot');
 
-// @desc    Register staff member
-// @route   POST /api/admin/staff
-// @access  Private (Admin)
+/*
+ * This function is used by the admin to register a new staff member.
+ * It takes name, email, and password from the request body.
+ * Only admin users are allowed to access this API.
+ */
 const registerStaff = async (req, res) => {
     try {
         const { name, email, password } = req.body;
 
-        // Check if user exists
+        // Check if a user already exists with the given email
         const userExists = await User.findOne({ email });
         if (userExists) {
             return res.status(400).json({ message: 'User already exists' });
         }
 
-        // Create staff user
+        // Create a new user with role set as 'staff'
         const staff = await User.create({
             name,
             email,
@@ -23,6 +25,7 @@ const registerStaff = async (req, res) => {
             role: 'staff',
         });
 
+        // Send the newly created staff details as response
         res.status(201).json({
             _id: staff._id,
             name: staff.name,
@@ -34,11 +37,14 @@ const registerStaff = async (req, res) => {
     }
 };
 
-// @desc    Get all staff members
-// @route   GET /api/admin/staff
-// @access  Private (Admin)
+/*
+ * This function fetches all registered staff members.
+ * Password field is excluded for security reasons.
+ * Only accessible by admin.
+ */
 const getAllStaff = async (req, res) => {
     try {
+        // Get all users whose role is 'staff'
         const staff = await User.find({ role: 'staff' }).select('-password');
         res.json(staff);
     } catch (error) {
@@ -46,21 +52,26 @@ const getAllStaff = async (req, res) => {
     }
 };
 
-// @desc    Delete staff member
-// @route   DELETE /api/admin/staff/:id
-// @access  Private (Admin)
+/*
+ * This function deletes a staff member using their ID.
+ * It first checks if the user exists and confirms the role is staff.
+ */
 const deleteStaff = async (req, res) => {
     try {
+        // Find staff member by ID
         const staff = await User.findById(req.params.id);
 
+        // If no staff found, return error
         if (!staff) {
             return res.status(404).json({ message: 'Staff not found' });
         }
 
+        // Prevent deletion of users who are not staff
         if (staff.role !== 'staff') {
             return res.status(400).json({ message: 'Can only delete staff members' });
         }
 
+        // Delete the staff member
         await User.findByIdAndDelete(req.params.id);
 
         res.json({ message: 'Staff member removed' });
@@ -69,40 +80,42 @@ const deleteStaff = async (req, res) => {
     }
 };
 
-// @desc    Get dashboard analytics
-// @route   GET /api/admin/analytics
-// @access  Private (Admin)
+/*
+ * This function provides analytics data for the admin dashboard.
+ * It includes booking count, active tokens, users, and revenue details.
+ */
 const getAnalytics = async (req, res) => {
     try {
+        // Set time to start of the current day
         const today = new Date();
         today.setHours(0, 0, 0, 0);
 
-        // Total bookings today
+        // Count total bookings made today
         const totalBookingsToday = await Booking.countDocuments({
             bookedAt: { $gte: today },
         });
 
-        // Active tokens
+        // Count tokens that are either pending or currently being served
         const activeTokens = await Booking.countDocuments({
             status: { $in: ['pending', 'serving'] },
         });
 
-        // Served tokens today
+        // Count how many tokens are served today
         const servedToday = await Booking.countDocuments({
             status: 'served',
             servedAt: { $gte: today },
         });
 
-        // Cancelled bookings today
+        // Count cancelled bookings for today
         const cancelledToday = await Booking.countDocuments({
             status: 'cancelled',
             cancelledAt: { $gte: today },
         });
 
-        // Total students
+        // Count total student users
         const totalStudents = await User.countDocuments({ role: 'student' });
 
-        // Total staff
+        // Count total staff users
         const totalStaff = await User.countDocuments({ role: 'staff' });
 
         // Calculate total revenue from served bookings today
@@ -112,9 +125,12 @@ const getAnalytics = async (req, res) => {
         }).populate('items.menuItemId', 'price');
 
         let totalRevenue = 0;
+
+        // Calculate revenue based on item price and quantity
         servedBookings.forEach(booking => {
             booking.items.forEach(item => {
-                totalRevenue += item.menuItemId.price * item.quantity;
+                const price = item.menuItemId ? item.menuItemId.price : 0;
+                totalRevenue += price * item.quantity;
             });
         });
 
@@ -132,14 +148,16 @@ const getAnalytics = async (req, res) => {
     }
 };
 
-// @desc    Get slot-wise booking data
-// @route   GET /api/admin/analytics/slot-wise
-// @access  Private (Admin)
+/*
+ * This function returns booking statistics slot-wise for the current day.
+ * It helps the admin understand slot usage and load.
+ */
 const getSlotWiseData = async (req, res) => {
     try {
         const today = new Date();
         today.setHours(0, 0, 0, 0);
 
+        // Group bookings by slotId and count based on status
         const slotData = await Booking.aggregate([
             {
                 $match: {
@@ -163,8 +181,10 @@ const getSlotWiseData = async (req, res) => {
             },
         ]);
 
-        // Populate slot names
+        // Fetch slot details to get slot names
         const slots = await Slot.find({});
+
+        // Match slot IDs with names
         const result = slotData.map((data) => {
             const slot = slots.find((s) => s._id.toString() === data._id.toString());
             return {
@@ -179,21 +199,22 @@ const getSlotWiseData = async (req, res) => {
     }
 };
 
-// @desc    Get staff performance metrics
-// @route   GET /api/admin/analytics/staff-performance
-// @access  Private (Admin)
+/*
+ * This function gives a simple overview of staff performance.
+ * It calculates how many tokens are served on average per staff member.
+ */
 const getStaffPerformance = async (req, res) => {
     try {
         const today = new Date();
         today.setHours(0, 0, 0, 0);
 
-        // For now, return served tokens count
-        // In a real app, you'd track which staff member served which token
+        // Count total tokens served today
         const servedCount = await Booking.countDocuments({
             status: 'served',
             servedAt: { $gte: today },
         });
 
+        // Count number of staff members
         const staffCount = await User.countDocuments({ role: 'staff' });
 
         res.json({
