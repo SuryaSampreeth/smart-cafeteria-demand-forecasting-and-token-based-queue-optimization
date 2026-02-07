@@ -7,17 +7,37 @@ import { menuAPI } from '../../services/api';
 import { colors } from '../../styles/colors';
 import { typography } from '../../styles/typography';
 
+/*
+ * StaffHomeScreen
+ * ---------------
+ * The primary dashboard for cafeteria staff.
+ * 
+ * Key Features:
+ * 1. Lists all meal slots (Breakfast, Lunch, etc.).
+ * 2. Shows real-time capacity and current booking counts.
+ * 3. Highlights active vs. inactive slots.
+ */
 const StaffHomeScreen = () => {
     const { logout, user } = useAuth();
+
+    // UI State
     const [loading, setLoading] = useState(true);
     const [refreshing, setRefreshing] = useState(false);
-    const [slots, setSlots] = useState([]);
+
+    // Data State
+    const [slots, setSlots] = useState([]); // Array of slot objects
     const [error, setError] = useState('');
 
+    /**
+     * Initial fetch on component mount.
+     */
     useEffect(() => {
         fetchSlots();
     }, []);
 
+    /**
+     * Fetches operational data for all slots.
+     */
     const fetchSlots = async () => {
         try {
             setError('');
@@ -68,6 +88,10 @@ const StaffHomeScreen = () => {
 
                 <Text style={styles.sectionTitle}>Available Slots</Text>
 
+                {/* 
+                 * Render each slot as a card.
+                 * This helps staff quickly see which slot is busy.
+                 */}
                 {slots.map((slot) => (
                     <Card key={slot._id} style={styles.slotCard}>
                         <View style={styles.slotHeader}>
@@ -76,6 +100,8 @@ const StaffHomeScreen = () => {
                                 {slot.startTime} - {slot.endTime}
                             </Text>
                         </View>
+
+                        {/* 3-Column Stats Layout */}
                         <View style={styles.slotStats}>
                             <View style={styles.statItem}>
                                 <Text style={styles.statNumber}>{slot.currentBookings}</Text>
@@ -86,6 +112,7 @@ const StaffHomeScreen = () => {
                                 <Text style={styles.statLabel}>Capacity</Text>
                             </View>
                             <View style={styles.statItem}>
+                                {/* Conditional styling for status text */}
                                 <Text style={[styles.statNumber, { color: slot.isActive ? colors.success : colors.error }]}>
                                     {slot.isActive ? 'Active' : 'Inactive'}
                                 </Text>
@@ -95,6 +122,7 @@ const StaffHomeScreen = () => {
                     </Card>
                 ))}
 
+                {/* Static Instructions Card for new staff onboarding */}
                 <Card style={styles.infoCard}>
                     <Text style={styles.infoTitle}>📋 Instructions</Text>
                     <Text style={styles.infoText}>• Go to the "Queue" tab to manage tokens</Text>
@@ -175,7 +203,7 @@ const styles = StyleSheet.create({
     },
     infoCard: {
         marginTop: 8,
-        backgroundColor: colors.info + '10',
+        backgroundColor: colors.info + '10', // Light info background
         borderLeftWidth: 4,
         borderLeftColor: colors.info,
     },

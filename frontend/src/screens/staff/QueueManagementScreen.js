@@ -17,19 +17,42 @@ import { colors } from '../../styles/colors';
 import { typography } from '../../styles/typography';
 import { BOOKING_STATUS } from '../../utils/constants';
 
+/*
+ * QueueManagementScreen
+ * ---------------------
+ * The operational hub for staff members.
+ * 
+ * Core Functions:
+ * 1. View live queue for a specific slot (filtered by selector).
+ * 2. Call Next: Auto-assigns the next pending token to the staff member.
+ * 3. Mark Served: Completes the order workflow.
+ * 
+ * Note: Handles platform differences for Alerts (Web vs Native).
+ */
 const QueueManagementScreen = () => {
+    // Component State
     const [loading, setLoading] = useState(true);
     const [refreshing, setRefreshing] = useState(false);
-    const [slots, setSlots] = useState([]);
-    const [selectedSlot, setSelectedSlot] = useState('');
-    const [queue, setQueue] = useState([]);
-    const [error, setError] = useState('');
-    const [actionLoading, setActionLoading] = useState(null);
 
+    // Data State
+    const [slots, setSlots] = useState([]);          // List of available slots
+    const [selectedSlot, setSelectedSlot] = useState(''); // Currently viewed slot ID
+    const [queue, setQueue] = useState([]);          // List of booking objects (tokens) in the queue
+
+    // UI Feedback
+    const [error, setError] = useState('');
+    const [actionLoading, setActionLoading] = useState(null); // Track which specific action is loading (ID or 'callNext')
+
+    /**
+     * Load slots on mount
+     */
     useEffect(() => {
         fetchSlots();
     }, []);
 
+    /**
+     * Reload queue whenever the selected slot changes
+     */
     useEffect(() => {
         if (selectedSlot) {
             fetchQueue();
@@ -40,6 +63,7 @@ const QueueManagementScreen = () => {
         try {
             const response = await menuAPI.getAllSlots();
             setSlots(response.data);
+            // Auto-select the first slot if none selected
             if (response.data.length > 0 && !selectedSlot) {
                 setSelectedSlot(response.data[0]._id);
             }
@@ -71,20 +95,26 @@ const QueueManagementScreen = () => {
         fetchQueue();
     };
 
+    /**
+     * Calls the next student in the FIFO queue.
+     * Updates the booking status from PENDING -> SERVING.
+     */
     const handleCallNext = async () => {
         if (!selectedSlot) return;
 
+        // Set actionLoading to 'callNext' to show spinner on the big button
         setActionLoading('callNext');
         try {
             const response = await staffAPI.callNext(selectedSlot);
             const message = `Token ${response.data.tokenNumber} for ${response.data.studentId.name} is now being served.`;
 
+            // Platform-specific alert handling
             if (Platform.OS === 'web') {
                 window.alert('Token Called\n\n' + message);
             } else {
                 Alert.alert('Token Called', message, [{ text: 'OK' }]);
             }
-            fetchQueue();
+            fetchQueue(); // Refresh list to show new status
         } catch (err) {
             const errorMsg = err.response?.data?.message || 'Failed to call next token';
             if (Platform.OS === 'web') {
@@ -97,21 +127,34 @@ const QueueManagementScreen = () => {
         }
     };
 
+    /**
+     * Marks a specific token as completed.
+     * Updates status from SERVING -> SERVED.
+     */
     const handleMarkServed = async (bookingId, tokenNumber) => {
         const confirmMessage = `Mark token ${tokenNumber} as completed?`;
 
+        // Wrapper function to execute the API call
+        const executeMarkServed = async () => {
+            setActionLoading(bookingId); // Show spinner only on this specific button
+            try {
+                await staffAPI.markServed(bookingId);
+                // Success feedback
+                const msg = `Success! Token ${tokenNumber} marked as completed`;
+                Platform.OS === 'web' ? window.alert(msg) : Alert.alert('Success', msg);
+                fetchQueue();
+            } catch (err) {
+                const msg = 'Error: ' + (err.response?.data?.message || 'Failed to mark as completed');
+                Platform.OS === 'web' ? window.alert(msg) : Alert.alert('Error', msg);
+            } finally {
+                setActionLoading(null);
+            }
+        };
+
+        // Confirmation Dialog
         if (Platform.OS === 'web') {
             if (window.confirm(confirmMessage)) {
-                setActionLoading(bookingId);
-                try {
-                    await staffAPI.markServed(bookingId);
-                    window.alert(`Success! Token ${tokenNumber} marked as completed`);
-                    fetchQueue();
-                } catch (err) {
-                    window.alert('Error: ' + (err.response?.data?.message || 'Failed to mark as completed'));
-                } finally {
-                    setActionLoading(null);
-                }
+                executeMarkServed();
             }
         } else {
             Alert.alert(
@@ -119,36 +162,21 @@ const QueueManagementScreen = () => {
                 confirmMessage,
                 [
                     { text: 'Cancel', style: 'cancel' },
-                    {
-                        text: 'Mark Completed',
-                        onPress: async () => {
-                            setActionLoading(bookingId);
-                            try {
-                                await staffAPI.markServed(bookingId);
-                                Alert.alert('Success', `Token ${tokenNumber} marked as completed`);
-                                fetchQueue();
-                            } catch (err) {
-                                Alert.alert('Error', err.response?.data?.message || 'Failed to mark as completed');
-                            } finally {
-                                setActionLoading(null);
-                            }
-                        },
-                    },
+                    { text: 'Mark Completed', onPress: executeMarkServed },
                 ]
             );
         }
     };
 
+    /**
+     * Helper: Maps booking status to UI colors
+     */
     const getStatusColor = (status) => {
         switch (status) {
-            case BOOKING_STATUS.PENDING:
-                return colors.warning;
-            case BOOKING_STATUS.SERVING:
-                return colors.info;
-            case BOOKING_STATUS.SERVED:
-                return colors.success;
-            default:
-                return colors.gray;
+            case BOOKING_STATUS.PENDING: return colors.warning; // Yellow/Orange
+            case BOOKING_STATUS.SERVING: return colors.info;    // Blue
+            case BOOKING_STATUS.SERVED: return colors.success;  // Green
+            default: return colors.gray;
         }
     };
 
@@ -160,16 +188,19 @@ const QueueManagementScreen = () => {
         );
     }
 
+    // Client-side calculation of queue stats
     const pendingCount = queue.filter((t) => t.status === BOOKING_STATUS.PENDING).length;
     const servingCount = queue.filter((t) => t.status === BOOKING_STATUS.SERVING).length;
 
     return (
         <View style={styles.container}>
+            {/* Fixed Header with Slot Selector and Stats */}
             <View style={styles.header}>
                 <Text style={styles.title}>Queue Management</Text>
 
                 <View style={styles.pickerContainer}>
                     <Text style={styles.pickerLabel}>Select Slot:</Text>
+                    {/* Using HTML select for web compatibility - in React Native native, use Picker */}
                     <select
                         value={selectedSlot}
                         onChange={(e) => setSelectedSlot(e.target.value)}
@@ -191,6 +222,7 @@ const QueueManagementScreen = () => {
                     </select>
                 </View>
 
+                {/* Queue Summary Stats */}
                 <View style={styles.statsRow}>
                     <View style={styles.statBox}>
                         <Text style={styles.statNumber}>{pendingCount}</Text>
@@ -206,6 +238,7 @@ const QueueManagementScreen = () => {
                     </View>
                 </View>
 
+                {/* Main Action: Call Next Token */}
                 {pendingCount > 0 && (
                     <Button
                         title="📢 Call Next Token"
@@ -216,6 +249,7 @@ const QueueManagementScreen = () => {
                 )}
             </View>
 
+            {/* Scrollable Queue List */}
             <ScrollView
                 style={styles.content}
                 refreshControl={
@@ -231,6 +265,7 @@ const QueueManagementScreen = () => {
                 {queue.length > 0 ? (
                     queue.map((token) => (
                         <Card key={token._id} style={styles.tokenCard}>
+                            {/* Token Header: ID, Name, Status */}
                             <View style={styles.tokenHeader}>
                                 <View>
                                     <Text style={styles.tokenNumber}>{token.tokenNumber}</Text>
@@ -249,6 +284,7 @@ const QueueManagementScreen = () => {
                                 </View>
                             </View>
 
+                            {/* Token Metadata */}
                             <View style={styles.tokenDetails}>
                                 <Text style={styles.detailLabel}>Queue Position: {token.queuePosition}</Text>
                                 <Text style={styles.detailLabel}>
@@ -261,7 +297,11 @@ const QueueManagementScreen = () => {
                                 )}
                             </View>
 
-                            {/* Only show Mark as Completed button for SERVING status */}
+                            {/* 
+                             * Completion Action:
+                             * Only show this button if the token is currently being served.
+                             * (Workflow: Pending -> Call Next (Serving) -> Mark Served (Done))
+                             */}
                             {token.status === BOOKING_STATUS.SERVING && (
                                 <View style={styles.actionButtons}>
                                     <TouchableOpacity
@@ -299,6 +339,7 @@ const styles = StyleSheet.create({
         padding: 16,
         borderBottomWidth: 1,
         borderBottomColor: colors.brownieLight + '30',
+        zIndex: 10, // Ensure header shadow renders over content
     },
     title: {
         ...typography.h2,
