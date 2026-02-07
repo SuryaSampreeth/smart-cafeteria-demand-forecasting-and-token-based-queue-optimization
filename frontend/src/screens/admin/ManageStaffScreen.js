@@ -17,23 +17,48 @@ import { adminAPI } from '../../services/api';
 import { colors } from '../../styles/colors';
 import { typography } from '../../styles/typography';
 
+/*
+ * ManageStaffScreen
+ * -----------------
+ * This screen allows administrators to manage the cafeteria staff.
+ * Key Features:
+ * 1. View all registered staff members.
+ * 2. Register new staff members (Name, Email, Password).
+ * 3. Delete existing staff profiles.
+ * 4. Input validation for the registration form.
+ */
 const ManageStaffScreen = () => {
+    // Data Loading State
     const [loading, setLoading] = useState(true);
     const [refreshing, setRefreshing] = useState(false);
+
+    // Staff Data State
     const [staff, setStaff] = useState([]);
+
+    // Form Visibility State (Toggles the registration form)
     const [showForm, setShowForm] = useState(false);
+
+    // Form Data State
     const [formData, setFormData] = useState({
         name: '',
         email: '',
         password: '',
     });
+
+    // Error & Submission Handling
     const [error, setError] = useState('');
     const [submitting, setSubmitting] = useState(false);
 
+    /**
+     * Initial fetch of staff list on component mount.
+     */
     useEffect(() => {
         fetchStaff();
     }, []);
 
+    /**
+     * Calls backend API to get all users with 'staff' role.
+     */
     const fetchStaff = async () => {
         try {
             setError('');
@@ -53,12 +78,17 @@ const ManageStaffScreen = () => {
         fetchStaff();
     };
 
+    /**
+     * Validates input and submits new staff registration.
+     */
     const handleRegister = async () => {
+        // 1. Basic Validation
         if (!formData.name || !formData.email || !formData.password) {
             setError('Please fill in all fields');
             return;
         }
 
+        // 2. Password Length Check (Security best practice)
         if (formData.password.length < 6) {
             setError('Password must be at least 6 characters');
             return;
@@ -68,7 +98,10 @@ const ManageStaffScreen = () => {
         setError('');
 
         try {
+            // 3. API Call to register
             await adminAPI.registerStaff(formData);
+
+            // 4. Reset form and refresh list on success
             setFormData({ name: '', email: '', password: '' });
             setShowForm(false);
             Alert.alert('Success', 'Staff member registered successfully');
@@ -80,6 +113,10 @@ const ManageStaffScreen = () => {
         }
     };
 
+    /**
+     * Deletes a staff member after confirmation.
+     * Uses an alert dialog to prevent accidental deletions.
+     */
     const handleDelete = (staffId, staffName) => {
         Alert.alert(
             'Confirm Delete',
@@ -88,7 +125,7 @@ const ManageStaffScreen = () => {
                 { text: 'Cancel', style: 'cancel' },
                 {
                     text: 'Delete',
-                    style: 'destructive',
+                    style: 'destructive', // Highlights button in red on iOS
                     onPress: async () => {
                         try {
                             await adminAPI.deleteStaff(staffId);
@@ -121,6 +158,7 @@ const ManageStaffScreen = () => {
             >
                 <Text style={styles.title}>Manage Staff</Text>
 
+                {/* Toggle Button for Registration Form */}
                 <Button
                     title={showForm ? 'Cancel' : '+ Register New Staff'}
                     onPress={() => {
@@ -132,6 +170,7 @@ const ManageStaffScreen = () => {
                     style={styles.toggleButton}
                 />
 
+                {/* Conditional Rendering: Registration Form */}
                 {showForm && (
                     <Card style={styles.formCard}>
                         <Text style={styles.formTitle}>Register Staff Member</Text>
@@ -164,7 +203,7 @@ const ManageStaffScreen = () => {
                             placeholder="Enter password (min 6 characters)"
                             value={formData.password}
                             onChangeText={(text) => setFormData({ ...formData, password: text })}
-                            secureTextEntry
+                            secureTextEntry={true} // Hides text for security
                             autoCapitalize="none"
                         />
 
@@ -177,6 +216,7 @@ const ManageStaffScreen = () => {
                     </Card>
                 )}
 
+                {/* Staff List Section */}
                 <Text style={styles.sectionTitle}>Staff Members ({staff.length})</Text>
 
                 {staff.length > 0 ? (
@@ -187,6 +227,7 @@ const ManageStaffScreen = () => {
                                     <Text style={styles.staffName}>{member.name}</Text>
                                     <Text style={styles.staffEmail}>{member.email}</Text>
                                 </View>
+                                {/* Delete Action */}
                                 <TouchableOpacity
                                     style={styles.deleteButton}
                                     onPress={() => handleDelete(member._id, member.name)}

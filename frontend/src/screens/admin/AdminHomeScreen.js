@@ -7,36 +7,66 @@ import { adminAPI } from '../../services/api';
 import { colors } from '../../styles/colors';
 import { typography } from '../../styles/typography';
 
+/*
+ * AdminHomeScreen
+ * ---------------
+ * The main page for administrators.
+ * It provides a quick view of the cafeteria's current state:
+ * - Daily booking operational metrics (Today's bookings, active tokens, revenue).
+ * - Staff and Student counts.
+ * - Detailed breakdown of bookings per time slot to monitor load.
+ */
 const AdminHomeScreen = () => {
-    const { logout, user } = useAuth();
-    const [loading, setLoading] = useState(true);
-    const [refreshing, setRefreshing] = useState(false);
-    const [analytics, setAnalytics] = useState(null);
-    const [slotWiseData, setSlotWiseData] = useState([]);
-    const [error, setError] = useState('');
+    const { logout, user } = useAuth(); // Auth context for user info and logout function
 
+    // UI State Management
+    const [loading, setLoading] = useState(true);        // Initial load spinner
+    const [refreshing, setRefreshing] = useState(false); // Pull-to-refresh state
+
+    // Data State
+    const [analytics, setAnalytics] = useState(null);    // General stats (revenue, counts)
+    const [slotWiseData, setSlotWiseData] = useState([]); // Array of slot performance data
+    const [error, setError] = useState('');              // Error message holding
+
+    /**
+     * Initial Data Fetch
+     */
     useEffect(() => {
         fetchData();
     }, []);
 
+    /**
+     * Fetches all dashboard data in parallel.
+     * We use Promise.all to ensure both analytics and slot data are ready
+     * before rendering, preventing UI layout shifts.
+     */
     const fetchData = async () => {
         try {
             setError('');
+            // Parallel API calls for efficiency
             const [analyticsRes, slotWiseRes] = await Promise.all([
                 adminAPI.getAnalytics(),
                 adminAPI.getSlotWiseData(),
             ]);
+
             setAnalytics(analyticsRes.data);
             setSlotWiseData(slotWiseRes.data);
         } catch (err) {
+            // Robust error handling needed for dashboard reliability
             setError(err.response?.data?.message || 'Failed to load analytics');
             console.error('Error fetching analytics:', err);
         } finally {
+            // Stop all loading indicators
             setLoading(false);
             setRefreshing(false);
         }
     };
 
+    /**
+     * Handles pull-to-refresh action.
+     * Does NOT set 'loading' to true to avoid full screen spinner,
+     * instead relies on scroll view's refresh control.
+     */
     const onRefresh = () => {
         setRefreshing(true);
         fetchData();
@@ -70,7 +100,10 @@ const AdminHomeScreen = () => {
                     </Card>
                 ) : null}
 
-                {/* Statistics Cards */}
+                {/* 
+                 * Row 1: Key Operational Metrics 
+                 * Focuses on immediate daily activity.
+                 */}
                 <View style={styles.statsContainer}>
                     <View style={styles.statCard}>
                         <Text style={styles.statNumber}>{analytics?.totalBookingsToday || 0}</Text>
@@ -82,6 +115,10 @@ const AdminHomeScreen = () => {
                     </View>
                 </View>
 
+                {/* 
+                 * Row 2: Service Efficiency Metrics 
+                 * Tracks throughput and cancellations.
+                 */}
                 <View style={styles.statsContainer}>
                     <View style={styles.statCard}>
                         <Text style={styles.statNumber}>{analytics?.servedToday || 0}</Text>
@@ -93,6 +130,10 @@ const AdminHomeScreen = () => {
                     </View>
                 </View>
 
+                {/* 
+                 * Row 3: User Base Overview 
+                 * Helps admin keep track of system adoption.
+                 */}
                 <View style={styles.statsContainer}>
                     <View style={styles.statCard}>
                         <Text style={styles.statNumber}>{analytics?.totalStaff || 0}</Text>
@@ -104,13 +145,22 @@ const AdminHomeScreen = () => {
                     </View>
                 </View>
 
-                {/* Revenue Card - Full Width */}
+                {/* 
+                 * Revenue Card - Highlighted
+                 * Full width to emphasize financial performance.
+                 */}
                 <View style={styles.revenueContainer}>
                     <Text style={styles.revenueNumber}>₹{analytics?.totalRevenue || 0}</Text>
                     <Text style={styles.revenueLabel}>Total Revenue (Completed Orders)</Text>
                 </View>
 
-                {/* Slot-wise Bookings */}
+                {/* 
+                 * Slot-wise Breakdown
+                 * -------------------
+                 * This section is critical for capacity planning.
+                 * It breaks down the booking funnel (Total -> Pending -> Serving -> Served)
+                 * for each time slot individually.
+                 */}
                 <Text style={styles.sectionTitle}>Slot-wise Bookings Today</Text>
                 {slotWiseData.length > 0 ? (
                     slotWiseData.map((slot, index) => (

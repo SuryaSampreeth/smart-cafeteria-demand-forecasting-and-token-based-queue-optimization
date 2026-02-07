@@ -17,28 +17,52 @@ import { menuAPI } from '../../services/api';
 import { colors } from '../../styles/colors';
 import { typography } from '../../styles/typography';
 
+/*
+ * ManageMenuScreen
+ * ----------------
+ * Allows the admin to curate the cafeteria's food menu.
+ * Key Functionalities:
+ * 1. List all available menu items.
+ * 2. Create new items with details (Price, Category, Description).
+ * 3. Assign items to specific time slots (Breakfast, Lunch, etc.).
+ * 4. Delete items from the menu.
+ */
 const ManageMenuScreen = () => {
+    // UI Loading States
     const [loading, setLoading] = useState(true);
     const [refreshing, setRefreshing] = useState(false);
-    const [menuItems, setMenuItems] = useState([]);
-    const [slots, setSlots] = useState([]);
-    const [showForm, setShowForm] = useState(false);
+
+    // Data States
+    const [menuItems, setMenuItems] = useState([]); // List of all food items
+    const [slots, setSlots] = useState([]);         // List of available time slots
+
+    // Form Interaction State
+    const [showForm, setShowForm] = useState(false); // Toggle add item form
     const [formData, setFormData] = useState({
         name: '',
         description: '',
-        category: 'veg',
+        category: 'veg',  // Default category
         price: '',
         imageUrl: '',
     });
+
+    // Multi-select state for assigning item to multiple slots
     const [selectedSlots, setSelectedSlots] = useState([]);
+
     const [error, setError] = useState('');
     const [submitting, setSubmitting] = useState(false);
 
+    /**
+     * Initial data load: Get Menu Items AND Slots
+     */
     useEffect(() => {
         fetchMenuItems();
         fetchSlots();
     }, []);
 
+    /**
+     * Fetches the complete list of menu items from the backend.
+     */
     const fetchMenuItems = async () => {
         try {
             setError('');
@@ -53,6 +77,9 @@ const ManageMenuScreen = () => {
         }
     };
 
+    /**
+     * Fetches time slots (Breakfast, Lunch, Dinner) so items can be linked to them.
+     */
     const fetchSlots = async () => {
         try {
             const response = await menuAPI.getAllSlots();
@@ -67,7 +94,16 @@ const ManageMenuScreen = () => {
         fetchMenuItems();
     };
 
+    /**
+     * core Logic: Add New Menu Item
+     * -----------------------------
+     * 1. Validates form inputs.
+     * 2. Creates the menu item via API.
+     * 3. Iterates through selected slots and updates their menu lists.
+     *    (Note: This N+1 API call pattern is simple but could be optimized in future backend iterations)
+     */
     const handleAddItem = async () => {
+        // 1. Validation
         if (!formData.name || !formData.description || !formData.price) {
             setError('Please fill in all required fields');
             return;
@@ -88,18 +124,19 @@ const ManageMenuScreen = () => {
         setError('');
 
         try {
-            // First, create the menu item
+            // 2. Create the menu item
             const itemResponse = await menuAPI.addMenuItem({
                 ...formData,
                 price,
+                // Use placeholder if no image URL provided
                 imageUrl: formData.imageUrl || 'https://via.placeholder.com/150?text=' + formData.name,
             });
 
             const newItemId = itemResponse.data._id;
 
-            // Then, assign it to all selected slots
+            // 3. Assign item to selected slots
             for (const slotId of selectedSlots) {
-                // Fetch existing menu for this slot
+                // Fetch existing menu for this slot to preserve other items
                 const menuResponse = await menuAPI.getMenuBySlot(slotId);
                 const existingItemIds = menuResponse.data.menuItems?.map(item => item._id) || [];
 
@@ -108,10 +145,11 @@ const ManageMenuScreen = () => {
                     existingItemIds.push(newItemId);
                 }
 
-                // Update the menu for this slot
+                // Update the slot's menu
                 await menuAPI.assignMenuToSlot(slotId, { menuItems: existingItemIds });
             }
 
+            // 4. Cleanup and Feedback
             setFormData({
                 name: '',
                 description: '',
@@ -130,6 +168,9 @@ const ManageMenuScreen = () => {
         }
     };
 
+    /**
+     * Deletes a menu item.
+     */
     const handleDelete = (itemId, itemName) => {
         Alert.alert(
             'Confirm Delete',
@@ -153,28 +194,29 @@ const ManageMenuScreen = () => {
         );
     };
 
+    /**
+     * Helper to handle multi-selection of slots (checkbox logic).
+     */
     const toggleSlotSelection = (slotId) => {
         setSelectedSlots(prev => {
             if (prev.includes(slotId)) {
-                return prev.filter(id => id !== slotId);
+                return prev.filter(id => id !== slotId); // Uncheck
             } else {
-                return [...prev, slotId];
+                return [...prev, slotId]; // Check
             }
         });
     };
 
+    /**
+     * Returns color codes for food categories.
+     */
     const getCategoryColor = (category) => {
         switch (category) {
-            case 'veg':
-                return colors.success;
-            case 'non-veg':
-                return colors.error;
-            case 'beverage':
-                return colors.info;
-            case 'dessert':
-                return colors.warning;
-            default:
-                return colors.gray;
+            case 'veg': return colors.success;
+            case 'non-veg': return colors.error;
+            case 'beverage': return colors.info;
+            case 'dessert': return colors.warning;
+            default: return colors.gray;
         }
     };
 
@@ -196,6 +238,7 @@ const ManageMenuScreen = () => {
             >
                 <Text style={styles.title}>Manage Menu</Text>
 
+                {/* Form Toggle Button */}
                 <Button
                     title={showForm ? 'Cancel' : '+ Add New Menu Item'}
                     onPress={() => {
@@ -214,6 +257,7 @@ const ManageMenuScreen = () => {
                     style={styles.toggleButton}
                 />
 
+                {/* Add Item Form */}
                 {showForm && (
                     <Card style={styles.formCard}>
                         <Text style={styles.formTitle}>Add Menu Item</Text>
@@ -311,6 +355,7 @@ const ManageMenuScreen = () => {
                     </Card>
                 )}
 
+                {/* List of Menu Items */}
                 <Text style={styles.sectionTitle}>Menu Items ({menuItems.length})</Text>
 
                 {menuItems.length > 0 ? (
