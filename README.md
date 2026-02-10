@@ -242,7 +242,7 @@ BeforeUIEnhance/
 - Node.js (v14 or higher)
 - MongoDB Atlas account or local MongoDB installation
 - Expo CLI (for frontend development)
-- npm or yarn package manager
+- npm package manager
 
 ### Backend Setup
 
