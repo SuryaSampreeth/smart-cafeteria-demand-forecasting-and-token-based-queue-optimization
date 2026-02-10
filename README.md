@@ -40,7 +40,6 @@ AI/ML forecasting supports preparation planning to reduce waste, balance resourc
 - **View crowd analysis** - Access peak hours, occupancy summary, and system alerts
 - **Export reports in CSV format** - Generate downloadable reports for analysis
 - **Dashboard statistics** - Monitor active tokens, served orders, revenue, cancelled bookings, and user counts
-- **System-wide oversight** - Complete control over all system operations
 
 ## Key Features
 
@@ -344,11 +343,6 @@ The backend server will run on `http://localhost:5000`
 - **Improved crowd and waiting time prediction** - Enhanced algorithms using weather and academic calendar data
 - **Integration with weather APIs** - Factor weather conditions into demand forecasting
 - **Academic schedule integration** - Adjust predictions based on exam periods and class schedules
-- **Mobile push notifications** - Real-time alerts for order status and crowd levels
-- **Payment gateway integration** - Online payment for pre-booked meals
-- **Nutritional information** - Display nutritional facts for menu items
-- **Dietary preference filtering** - Filter menu by vegetarian, vegan, allergen-free options
-- **Feedback and rating system** - Allow students to rate meals and provide feedback
 
 ## Contributing
 
