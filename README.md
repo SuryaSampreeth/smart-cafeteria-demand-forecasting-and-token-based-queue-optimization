@@ -5,6 +5,7 @@
 - [Intro](#intro)
 - [About](#about)
 - [Project Structure](#project-structure)
+- [Project Architecture](#project-architecture)
 - [Tech Stack](#tech-stack)
 - [Installing and Updating](#installing-and-updating)
     - [Prerequisites](#prerequisites)
@@ -455,3 +456,4 @@ This project is licensed under the MIT License.
 ## Acknowledgments
 
 This system is designed with a focus on sustainability, fairness, and efficiency in cafeteria operations. By leveraging data-driven insights and token-based queue management, we aim to create a better dining experience while minimizing food waste and promoting equitable service delivery.
+
