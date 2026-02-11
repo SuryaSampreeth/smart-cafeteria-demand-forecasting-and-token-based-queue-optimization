@@ -9,7 +9,11 @@ import {
     ActivityIndicator,
     Platform,
     Image,
+    Dimensions,
+    ImageBackground,
+    Pressable, // Use Pressable for better hover handling
 } from 'react-native';
+import { LinearGradient } from 'expo-linear-gradient';
 import Card from '../../components/common/Card';
 import Button from '../../components/common/Button';
 import { menuAPI, bookingAPI } from '../../services/api';
@@ -36,6 +40,10 @@ const foodImages = {
     'coffee.jpg': require('../../../assets/images/food/coffee.jpg'),
     'gulab_jamun.jpg': require('../../../assets/images/food/gulab_jamun.jpg'),
     'ice_cream.jpg': require('../../../assets/images/food/ice_cream.jpg'),
+    'Breakfast1.jpg': require('../../../assets/images/food/Breakfast1.jpeg'),
+    'Lunch.jpg': require('../../../assets/images/food/Lunch.jpeg'),
+    'Snacks.jpg': require('../../../assets/images/food/Snacks.jpeg'),
+    'Dinner.jpg': require('../../../assets/images/food/Dinner.jpeg')
 };
 
 /**
@@ -126,8 +134,7 @@ const BookingScreen = ({ navigation, route }) => {
     const fetchSlots = async () => {
         try {
             const response = await menuAPI.getAllSlots();
-            // Only show slots that are marked as active
-            setSlots(response.data.filter(slot => slot.isActive));
+            setSlots(response.data);
         } catch (err) {
             setError('Failed to load slots');
         } finally {
@@ -291,10 +298,15 @@ const BookingScreen = ({ navigation, route }) => {
     if (step === 1) {
         return (
             <View style={styles.container}>
-                <View style={styles.header}>
+                <LinearGradient
+                    colors={[colors.brownieDark, colors.brownie]}
+                    style={styles.header}
+                    start={{ x: 0, y: 0 }}
+                    end={{ x: 0, y: 1 }}
+                >
                     <Text style={styles.title}>Select Meal Slot</Text>
                     <Text style={styles.subtitle}>Choose when you want to eat</Text>
-                </View>
+                </LinearGradient>
 
                 <ScrollView style={styles.content}>
                     {error ? (
@@ -303,26 +315,15 @@ const BookingScreen = ({ navigation, route }) => {
                         </Card>
                     ) : null}
 
-                    {slots.map((slot) => (
-                        <TouchableOpacity
-                            key={slot._id}
-                            style={styles.slotCard}
-                            onPress={() => handleSlotSelect(slot)}
-                        >
-                            <View style={styles.slotHeader}>
-                                <Text style={styles.slotName}>{slot.name}</Text>
-                                <Text style={styles.slotTime}>
-                                    {slot.startTime} - {slot.endTime}
-                                </Text>
-                            </View>
-                            <View style={styles.slotFooter}>
-                                <Text style={styles.slotCapacity}>
-                                    {slot.currentBookings}/{slot.capacity} booked
-                                </Text>
-                                <Text style={styles.slotArrow}>›</Text>
-                            </View>
-                        </TouchableOpacity>
-                    ))}
+                    <View style={styles.slotsGrid}>
+                        {slots.map((slot) => (
+                            <SlotItem
+                                key={slot._id}
+                                slot={slot}
+                                onPress={() => handleSlotSelect(slot)}
+                            />
+                        ))}
+                    </View>
                 </ScrollView>
             </View>
         );
@@ -332,13 +333,18 @@ const BookingScreen = ({ navigation, route }) => {
     if (step === 2) {
         return (
             <View style={styles.container}>
-                <View style={styles.header}>
+                <LinearGradient
+                    colors={[colors.brownieDark, colors.brownie]}
+                    style={styles.header}
+                    start={{ x: 0, y: 0 }}
+                    end={{ x: 0, y: 1 }}
+                >
                     <TouchableOpacity onPress={() => modifyMode ? navigation.navigate('Profile') : setStep(1)} style={styles.backButton}>
                         <Text style={styles.backText}>‹ Back</Text>
                     </TouchableOpacity>
                     <Text style={styles.title}>{modifyMode ? `Modify Booking (${tokenNumber})` : 'Select Items'}</Text>
                     <Text style={styles.subtitle}>{selectedSlot.name}</Text>
-                </View>
+                </LinearGradient>
 
                 <ScrollView style={styles.content}>
                     {menuItems.length > 0 ? (
@@ -445,6 +451,101 @@ const getCategoryColor = (category) => {
     }
 };
 
+/**
+ * Returns a thumbnail image for meal slots.
+ */
+const getSlotThumbnail = (name) => {
+    const n = name?.toLowerCase() || '';
+    if (n.includes('breakfast')) return foodImages['Breakfast1.jpg'];
+    if (n.includes('lunch')) return foodImages['Lunch.jpg'];
+    if (n.includes('snack')) return foodImages['Snacks.jpg'];
+    if (n.includes('dinner')) return foodImages['Dinner.jpg'];
+    // Return a default if no match
+    return foodImages['idli.jpg'];
+};
+
+/**
+ * Progressive Indicator Component
+ */
+const ProgressBar = ({ current, total }) => {
+    const percentage = Math.min(100, Math.max(0, (current / total) * 100));
+    const isFull = percentage >= 100;
+    const isHigh = percentage >= 80;
+
+    // Determine bar color based on occupancy
+    let barColor = colors.success;
+    if (isFull) barColor = colors.error;
+    else if (isHigh) barColor = colors.warning;
+
+    return (
+        <View style={styles.progressContainer}>
+            <View style={[styles.progressBar, { width: `${percentage}%`, backgroundColor: barColor }]} />
+        </View>
+    );
+};
+
+/**
+ * Enhanced Slot Card Component
+ */
+const SlotItem = ({ slot, onPress }) => {
+    const [hovered, setHovered] = useState(false);
+    const thumbnail = getSlotThumbnail(slot.name);
+    const isInactive = slot.isActive === false;
+
+    return (
+        <Pressable
+            onPress={isInactive ? null : onPress}
+            style={[
+                styles.slotCardContainer,
+                !isInactive && hovered && styles.slotCardHovered,
+                isInactive && styles.slotCardInactive
+            ]}
+            onHoverIn={() => !isInactive && setHovered(true)}
+            onHoverOut={() => !isInactive && setHovered(false)}
+        >
+            <View style={styles.slotImageContainer}>
+                <Image
+                    source={thumbnail}
+                    style={[styles.slotImage, isInactive && { opacity: 0.5 }]}
+                    resizeMode="cover"
+                />
+                {isInactive && (
+                    <View style={styles.closedOverlay}>
+                        <Text style={styles.closedText}>CLOSED</Text>
+                    </View>
+                )}
+            </View>
+
+            <View style={styles.slotContent}>
+                <View style={styles.slotHeader}>
+                    <Text style={[styles.slotCardTitle, isInactive && { color: colors.gray }]}>{slot.name}</Text>
+                    <Text style={styles.slotCardTime}>{slot.startTime} - {slot.endTime}</Text>
+                </View>
+
+                <View style={styles.slotCardFooter}>
+                    <View style={styles.capacityContainer}>
+                        <View style={styles.capacityHeader}>
+                            <Text style={styles.capacityText}>
+                                {slot.currentBookings}/{slot.capacity} booked
+                            </Text>
+                            <Text style={[styles.percentageText, isInactive && { color: colors.gray }]}>
+                                {Math.round((slot.currentBookings / slot.capacity) * 100)}%
+                            </Text>
+                        </View>
+                        <ProgressBar current={slot.currentBookings} total={slot.capacity} />
+                    </View>
+
+                    <View style={[styles.actionIconContainer, isInactive && { backgroundColor: colors.lightGray }]}>
+                        <Text style={[styles.actionIcon, isInactive && { color: colors.gray }]}>
+                            {isInactive ? '✕' : '➜'}
+                        </Text>
+                    </View>
+                </View>
+            </View>
+        </Pressable>
+    );
+};
+
 const styles = StyleSheet.create({
     container: {
         flex: 1,
@@ -457,27 +558,26 @@ const styles = StyleSheet.create({
         backgroundColor: colors.background,
     },
     header: {
-        backgroundColor: colors.cream,
-        padding: 16,
-        borderBottomWidth: 1,
-        borderBottomColor: colors.brownieLight + '30',
+        backgroundColor: colors.brownieDark, // Dark brown as requested
+        padding: 20,
+        // No curved edges
+    },
+    title: {
+        ...typography.h2,
+        color: colors.cream,
+        marginBottom: 4,
+    },
+    subtitle: {
+        ...typography.caption,
+        color: colors.lightGray,
     },
     backButton: {
         marginBottom: 8,
     },
     backText: {
         ...typography.body,
-        color: colors.brownie,
+        color: colors.cream,
         fontWeight: '600',
-    },
-    title: {
-        ...typography.h2,
-        color: colors.brownie,
-        marginBottom: 4,
-    },
-    subtitle: {
-        ...typography.caption,
-        color: colors.gray,
     },
     content: {
         flex: 1,
@@ -488,43 +588,105 @@ const styles = StyleSheet.create({
         ...typography.body,
         textAlign: 'center',
     },
-    slotCard: {
+    slotsGrid: {
+        flexDirection: 'row',
+        flexWrap: 'wrap',
+        justifyContent: 'space-between',
+        gap: 16,
+    },
+    slotCardContainer: {
+        width: '23%', // 4 items per row with gap
+        height: Platform.OS === 'web' ? '70vh' : 500, // Make it cover screen height
         backgroundColor: colors.white,
-        borderRadius: 12,
-        padding: 16,
-        marginBottom: 12,
-        borderWidth: 1,
-        borderColor: colors.brownieLight + '30',
+        borderRadius: 16,
+        marginBottom: 16,
         shadowColor: colors.brownie,
-        shadowOffset: { width: 0, height: 1 },
+        shadowOffset: { width: 0, height: 4 },
         shadowOpacity: 0.1,
-        shadowRadius: 2,
-        elevation: 2,
+        shadowRadius: 8,
+        elevation: 4,
+        overflow: 'hidden',
+        transition: 'transform 0.2s ease, box-shadow 0.2s ease',
+    },
+    slotCardHovered: {
+        transform: [{ scale: 1.02 }],
+        shadowOpacity: 0.2,
+        shadowRadius: 12,
+        elevation: 8,
+    },
+    slotImageContainer: {
+        height: '60%', // Image takes up more vertical space in tall cards
+        width: '100%',
+        backgroundColor: colors.lightGray,
+    },
+    slotImage: {
+        width: '100%',
+        height: '100%',
+    },
+    slotContent: {
+        padding: 16,
     },
     slotHeader: {
         marginBottom: 12,
     },
-    slotName: {
-        ...typography.h3,
+    slotCardTitle: {
+        fontSize: 20,
+        fontWeight: 'bold',
         color: colors.brownie,
         marginBottom: 4,
     },
-    slotTime: {
-        ...typography.body,
+    slotCardTime: {
+        fontSize: 14,
         color: colors.gray,
+        fontWeight: '500',
     },
-    slotFooter: {
+    slotCardFooter: {
+        flexDirection: 'row',
+        alignItems: 'center',
+        justifyContent: 'space-between',
+        marginTop: 8,
+    },
+    capacityContainer: {
+        flex: 1,
+        marginRight: 16,
+    },
+    capacityHeader: {
         flexDirection: 'row',
         justifyContent: 'space-between',
+        marginBottom: 6,
+    },
+    capacityText: {
+        fontSize: 12,
+        color: colors.gray,
+        fontWeight: '600',
+    },
+    percentageText: {
+        fontSize: 12,
+        color: colors.brownie,
+        fontWeight: 'bold',
+    },
+    progressContainer: {
+        height: 6,
+        backgroundColor: colors.lightGray,
+        borderRadius: 3,
+        overflow: 'hidden',
+    },
+    progressBar: {
+        height: '100%',
+        borderRadius: 3,
+    },
+    actionIconContainer: {
+        width: 36,
+        height: 36,
+        borderRadius: 18,
+        backgroundColor: colors.cream,
+        justifyContent: 'center',
         alignItems: 'center',
     },
-    slotCapacity: {
-        ...typography.caption,
-        color: colors.gray,
-    },
-    slotArrow: {
-        ...typography.h2,
-        color: colors.brownieLight,
+    actionIcon: {
+        fontSize: 16,
+        color: colors.brownie,
+        fontWeight: 'bold',
     },
     menuCard: {
         marginBottom: 12,
@@ -636,6 +798,26 @@ const styles = StyleSheet.create({
         color: colors.gray,
         textAlign: 'center',
         fontStyle: 'italic',
+    },
+    slotCardInactive: {
+        opacity: 0.8,
+        backgroundColor: '#F3F4F6',
+    },
+    closedOverlay: {
+        ...StyleSheet.absoluteFillObject,
+        backgroundColor: 'rgba(0,0,0,0.4)',
+        justifyContent: 'center',
+        alignItems: 'center',
+    },
+    closedText: {
+        color: colors.white,
+        fontWeight: 'bold',
+        fontSize: 18,
+        letterSpacing: 1.5,
+        backgroundColor: 'rgba(0,0,0,0.6)',
+        paddingHorizontal: 12,
+        paddingVertical: 4,
+        borderRadius: 4,
     },
 });
 

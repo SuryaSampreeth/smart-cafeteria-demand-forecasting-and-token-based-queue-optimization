@@ -1,5 +1,6 @@
-import React, { useState, useEffect } from 'react';
-import { View, Text, StyleSheet, ScrollView, TouchableOpacity, RefreshControl } from 'react-native';
+import React, { useState, useEffect, useRef } from 'react';
+import { View, Text, StyleSheet, ScrollView, TouchableOpacity, RefreshControl, ImageBackground, Pressable, Animated, Platform } from 'react-native';
+import { LinearGradient } from 'expo-linear-gradient';
 import { useNavigation } from '@react-navigation/native';
 import Header from '../../components/common/Header';
 import Card from '../../components/common/Card';
@@ -19,6 +20,61 @@ import { typography } from '../../styles/typography';
  * 
  * It serves as the central hub for all student-related activities in the app.
  */
+
+const HoverableGradientStatCard = ({ value, label }) => {
+    const scaleAnim = useRef(new Animated.Value(1)).current;
+    const [isHovered, setIsHovered] = useState(false);
+
+    const handleHoverIn = () => {
+        setIsHovered(true);
+        Animated.spring(scaleAnim, {
+            toValue: 1.05,
+            useNativeDriver: Platform.OS !== 'web',
+        }).start();
+    };
+
+    const handleHoverOut = () => {
+        setIsHovered(false);
+        Animated.spring(scaleAnim, {
+            toValue: 1,
+            useNativeDriver: Platform.OS !== 'web',
+        }).start();
+    };
+
+    return (
+        <Pressable
+            onHoverIn={handleHoverIn}
+            onHoverOut={handleHoverOut}
+            style={{ flex: 1, marginHorizontal: 4 }}
+        >
+            <Animated.View
+                style={[
+                    styles.statCardContainer,
+                    {
+                        transform: [{ scale: scaleAnim }],
+                        borderColor: isHovered ? colors.brownie : 'rgba(122, 74, 58, 0.2)', // Brownie border on hover
+                        borderWidth: isHovered ? 2 : 1,
+                        elevation: isHovered ? 8 : 3,
+                        shadowOpacity: isHovered ? 0.3 : 0.1,
+                    }
+                ]}
+            >
+                <LinearGradient
+                    // Gradient from Cream (#F3E9DC) to a visibly warmer/darker Brownie tint (#C9A897)
+                    // This creates a strong "Coffee Cream" gradient as requested.
+                    colors={[colors.cream, '#C9A897']}
+                    style={styles.statCardGradient}
+                    start={{ x: 0, y: 0 }}
+                    end={{ x: 1, y: 1 }}
+                >
+                    <Text style={styles.statNumber}>{value}</Text>
+                    <Text style={styles.statLabel}>{label}</Text>
+                </LinearGradient>
+            </Animated.View>
+        </Pressable>
+    );
+};
+
 const StudentHomeScreen = () => {
     // Access auth context for logout and user details
     const { logout, user } = useAuth();
@@ -46,7 +102,7 @@ const StudentHomeScreen = () => {
             const bookings = response.data;
 
             // Filter for active bookings (Pending or Serving)
-            const active = bookings.filter(b => b.status !== 'served' && b.status !== 'cancelled').length;
+            const active = bookings.filter(b => b.status === 'pending' || b.status === 'serving').length;
 
             // Update state
             setStats({ activeTokens: active, totalBookings: bookings.length });
@@ -63,6 +119,49 @@ const StudentHomeScreen = () => {
     const onRefresh = () => {
         setRefreshing(true);
         fetchStats();
+    };
+
+    /**
+     * QuickActionCard Component
+     * Renders a card with a background image, gradient overlay, and hover effect.
+     */
+    const QuickActionCard = ({ title, description, emoji, onPress, imageSource }) => {
+        const [isHovered, setIsHovered] = useState(false);
+
+        return (
+            <Pressable
+                style={[
+                    styles.actionCard,
+                    isHovered && {
+                        transform: [{ scale: 1.05 }, { translateY: -5 }], // Pop up and float
+                        shadowOpacity: 0.3,
+                        shadowRadius: 8,
+                        elevation: 8
+                    }
+                ]}
+                onPress={onPress}
+                onHoverIn={() => setIsHovered(true)}
+                onHoverOut={() => setIsHovered(false)}
+            >
+                <ImageBackground
+                    source={imageSource}
+                    style={styles.cardBackground}
+                    imageStyle={styles.cardBackgroundStyle}
+                >
+                    <LinearGradient
+                        // Gradient: Static transparent -> Black/Brown at bottom
+                        // No color shift on hover, just scale
+                        colors={['transparent', 'transparent', 'rgba(0,0,0,0.8)']}
+                        locations={[0, 0.5, 1]}
+                        style={styles.gradientOverlay}
+                    >
+
+                        <Text style={styles.actionTitle}>{title}</Text>
+                        <Text style={styles.actionDescription}>{description}</Text>
+                    </LinearGradient>
+                </ImageBackground>
+            </Pressable>
+        );
     };
 
     return (
@@ -82,74 +181,52 @@ const StudentHomeScreen = () => {
                 {/* Dashboard Statistics Cards */}
                 <View style={styles.statsContainer}>
                     {/* Active Tokens Card */}
-                    <View style={styles.statCard}>
-                        <Text style={styles.statNumber}>{stats.activeTokens}</Text>
-                        <Text style={styles.statLabel}>Active Tokens</Text>
-                    </View>
+                    <HoverableGradientStatCard
+                        value={stats.activeTokens}
+                        label="Active Tokens"
+                    />
 
                     {/* Total Bookings Card */}
-                    <View style={styles.statCard}>
-                        <Text style={styles.statNumber}>{stats.totalBookings}</Text>
-                        <Text style={styles.statLabel}>Total Bookings</Text>
-                    </View>
+                    <HoverableGradientStatCard
+                        value={stats.totalBookings}
+                        label="Total Bookings"
+                    />
                 </View>
 
                 {/* Quick Action Buttons */}
                 <Text style={styles.sectionTitle}>Quick Actions</Text>
 
-                {/* Navigate to Booking Screen */}
-                <TouchableOpacity
-                    style={styles.actionCard}
-                    onPress={() => navigation.navigate('Book Meal')}
-                >
-                    <View style={styles.actionIcon}>
-                        <Text style={styles.actionEmoji}>🍽️</Text>
-                    </View>
-                    <View style={styles.actionContent}>
-                        <Text style={styles.actionTitle}>Book a Meal</Text>
-                        <Text style={styles.actionDescription}>Select slot and order food</Text>
-                    </View>
-                    <Text style={styles.actionArrow}>›</Text>
-                </TouchableOpacity>
+                <View style={styles.quickActionsContainer}>
+                    {/* Book Meal */}
+                    <QuickActionCard
+                        title="Book Meal"
+                        description="Order now"
+                        emoji="🍽️"
+                        onPress={() => navigation.navigate('Book Meal')}
+                        // Use a local image or a placeholder URL from Unsplash
+                        imageSource={{ uri: 'https://images.unsplash.com/photo-1546069901-ba9599a7e63c' }}
+                    />
 
-                {/* Navigate to My Tokens Screen */}
-                <TouchableOpacity
-                    style={styles.actionCard}
-                    onPress={() => navigation.navigate('My Tokens')}
-                >
-                    <View style={styles.actionIcon}>
-                        <Text style={styles.actionEmoji}>🎫</Text>
-                    </View>
-                    <View style={styles.actionContent}>
-                        <Text style={styles.actionTitle}>My Tokens</Text>
-                        <Text style={styles.actionDescription}>View active tokens and queue status</Text>
-                    </View>
-                    <Text style={styles.actionArrow}>›</Text>
-                </TouchableOpacity>
+                    {/* My Tokens */}
+                    <QuickActionCard
+                        title="My Tokens"
+                        description="View active"
+                        emoji="🎫"
+                        onPress={() => navigation.navigate('My Tokens')}
+                        imageSource={{ uri: 'https://images.unsplash.com/photo-1645777572334-1256aa490fdb?w=600&auto=format&fit=crop&q=60&ixlib=rb-4.1.0&ixid=M3wxMjA3fDB8MHxzZWFyY2h8NHx8dG9rZW5zJTIwd2l0aCUyMG51bWJlcnxlbnwwfHwwfHx8MA%3D%3D' }} // Ticket/Queue concept
+                    />
 
-                {/* Navigate to Booking History (Profile) */}
-                <TouchableOpacity
-                    style={styles.actionCard}
-                    onPress={() => navigation.navigate('Profile')}
-                >
-                    <View style={styles.actionIcon}>
-                        <Text style={styles.actionEmoji}>📜</Text>
-                    </View>
-                    <View style={styles.actionContent}>
-                        <Text style={styles.actionTitle}>Booking History</Text>
-                        <Text style={styles.actionDescription}>View and manage your bookings</Text>
-                    </View>
-                    <Text style={styles.actionArrow}>›</Text>
-                </TouchableOpacity>
+                    {/* Start Booking History (Profile) */}
+                    <QuickActionCard
+                        title="History"
+                        description="Past orders"
+                        emoji="📜"
+                        onPress={() => navigation.navigate('Profile')}
+                        imageSource={{ uri: 'https://plus.unsplash.com/premium_photo-1683872921964-25348002a392?q=80&w=735&auto=format&fit=crop&ixlib=rb-4.1.0&ixid=M3wxMjA3fDB8MHxwaG90by1wYWdlfHx8fGVufDB8fHx8fA%3D%3D' }} // Receipt/List concept
+                    />
+                </View>
 
-                {/* Informational Card explaining the process */}
-                <Card style={styles.infoCard}>
-                    <Text style={styles.infoTitle}>ℹ️ How it works</Text>
-                    <Text style={styles.infoText}>1. Book a meal slot and select items</Text>
-                    <Text style={styles.infoText}>2. Get a token number (e.g., B001)</Text>
-                    <Text style={styles.infoText}>3. Track your queue position in real-time</Text>
-                    <Text style={styles.infoText}>4. Collect your food when called</Text>
-                </Card>
+                {/* Removed "How it works" section as requested */}
             </ScrollView>
         </View>
     );
@@ -180,20 +257,21 @@ const styles = StyleSheet.create({
         justifyContent: 'space-between',
         marginBottom: 24,
     },
-    statCard: {
+    statCardContainer: {
         flex: 1,
-        backgroundColor: colors.cream,
         borderRadius: 12,
-        padding: 20,
-        marginHorizontal: 4,
-        alignItems: 'center',
-        borderWidth: 1,
-        borderColor: colors.brownieLight + '30',
+        overflow: 'hidden', // Ensure gradient respects border radius
+        backgroundColor: colors.cream, // Fallback
         shadowColor: colors.brownie,
         shadowOffset: { width: 0, height: 2 },
-        shadowOpacity: 0.1,
         shadowRadius: 4,
-        elevation: 3,
+    },
+    statCardGradient: {
+        flex: 1,
+        padding: 20,
+        alignItems: 'center',
+        justifyContent: 'center',
+        width: '100%',
     },
     statNumber: {
         ...typography.h1,
@@ -210,67 +288,61 @@ const styles = StyleSheet.create({
         ...typography.h3,
         color: colors.brownie,
         marginBottom: 12,
+        marginTop: 10,
+    },
+    quickActionsContainer: {
+        flexDirection: 'row',
+        justifyContent: 'space-between',
+        marginBottom: 20,
     },
     actionCard: {
-        flexDirection: 'row',
-        alignItems: 'center',
-        backgroundColor: colors.white,
+        width: '31%', // Fits 3 in a row
+        aspectRatio: 0.8, // Slightly taller than wide
         borderRadius: 12,
-        padding: 16,
-        marginBottom: 12,
+        overflow: 'hidden',
         borderWidth: 1,
         borderColor: colors.brownieLight + '30',
         shadowColor: colors.brownie,
-        shadowOffset: { width: 0, height: 1 },
-        shadowOpacity: 0.1,
-        shadowRadius: 2,
-        elevation: 2,
+        shadowOffset: { width: 0, height: 2 },
+        shadowOpacity: 0.2,
+        shadowRadius: 3,
+        elevation: 4,
     },
-    actionIcon: {
-        width: 50,
-        height: 50,
-        borderRadius: 25,
-        backgroundColor: colors.cream,
-        justifyContent: 'center',
-        alignItems: 'center',
-        marginRight: 16,
+    cardBackground: {
+        flex: 1,
+        justifyContent: 'flex-end',
+    },
+    cardBackgroundStyle: {
+        borderRadius: 12,
+    },
+    gradientOverlay: {
+        height: '100%',
+        justifyContent: 'flex-end',
+        padding: 10,
+    },
+    actionIconContainer: {
+        marginBottom: 8,
+        alignSelf: 'center',
+        backgroundColor: 'rgba(255,255,255,0.2)',
+        borderRadius: 20,
+        padding: 8,
     },
     actionEmoji: {
         fontSize: 24,
     },
-    actionContent: {
-        flex: 1,
-    },
     actionTitle: {
-        ...typography.body,
-        color: colors.brownie,
-        fontWeight: '600',
-        marginBottom: 4,
+        ...typography.caption,
+        color: colors.white,
+        fontWeight: 'bold',
+        textAlign: 'center',
+        fontSize: 12,
     },
     actionDescription: {
         ...typography.caption,
-        color: colors.gray,
-    },
-    actionArrow: {
-        ...typography.h2,
-        color: colors.brownieLight,
-    },
-    infoCard: {
-        marginTop: 8,
-        backgroundColor: colors.info + '10',
-        borderLeftWidth: 4,
-        borderLeftColor: colors.info,
-    },
-    infoTitle: {
-        ...typography.body,
-        color: colors.brownie,
-        fontWeight: 'bold',
-        marginBottom: 8,
-    },
-    infoText: {
-        ...typography.caption,
-        color: colors.gray,
-        marginBottom: 4,
+        color: 'rgba(255,255,255,0.8)',
+        fontSize: 10,
+        textAlign: 'center',
+        marginTop: 2,
     },
 });
 

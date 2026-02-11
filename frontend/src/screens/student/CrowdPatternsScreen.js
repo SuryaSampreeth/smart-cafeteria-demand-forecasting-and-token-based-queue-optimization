@@ -1,4 +1,4 @@
-import React, { useState, useEffect } from 'react';
+import React, { useState, useEffect, useRef } from 'react';
 import {
     View,
     Text,
@@ -6,9 +6,13 @@ import {
     ScrollView,
     TouchableOpacity,
     ActivityIndicator,
+    Dimensions,
+    Animated,
+    Pressable,
     Platform,
 } from 'react-native';
 import { MaterialCommunityIcons } from '@expo/vector-icons';
+import { LinearGradient } from 'expo-linear-gradient';
 import { Picker } from '@react-native-picker/picker';
 import { colors } from '../../styles/colors';
 import CrowdPatternChart from '../../components/CrowdPatternChart';
@@ -24,7 +28,60 @@ import api from '../../services/api';
  * 3. Average occupancy statistics.
  * 4. Filtering by Slot and Time Range (7, 14, 30 days).
  */
-const CrowdPatternsScreen = () => {
+// Reusable Hoverable Card Component
+const HoverableCard = ({ children, style, initialBorderColor = 'rgba(0,0,0,0.05)' }) => {
+    const scaleAnim = useRef(new Animated.Value(1)).current;
+    const [isHovered, setIsHovered] = useState(false);
+
+    const handleHoverIn = () => {
+        setIsHovered(true);
+        Animated.spring(scaleAnim, {
+            toValue: 1.05, // Pop up slightly
+            useNativeDriver: Platform.OS !== 'web', // Native driver doesn't support layout props on web sometimes, but scale is fine. Safe to use false for web compat if needed, but scale works.
+        }).start();
+    };
+
+    const handleHoverOut = () => {
+        setIsHovered(false);
+        Animated.spring(scaleAnim, {
+            toValue: 1,
+            useNativeDriver: Platform.OS !== 'web',
+        }).start();
+    };
+
+    return (
+        <Pressable
+            onHoverIn={handleHoverIn}
+            onHoverOut={handleHoverOut}
+            style={{ flex: 1 }} // Ensure it takes space like a View
+        >
+            <Animated.View
+                style={[
+                    style,
+                    {
+                        transform: [{ scale: scaleAnim }],
+                        borderColor: isHovered ? colors.brownie : initialBorderColor,
+                        borderWidth: isHovered ? 2 : (style.borderWidth || 0), // Full border on hover
+                        borderLeftWidth: 4, // Keep the left border always
+                        borderLeftColor: colors.brownie, // Keep left border color
+                        // If hovered, key is that we want the REST of the borders to be brownie too. 
+                        // borderLeftWidth overrides borderWidth usually if defined after or specific.
+                        // We want specific look: Left edge thick, rest thin or thick brownie on hover.
+                        // Actually "complete brownie outline" implies uniform or at least visible on all sides.
+                        borderTopWidth: isHovered ? 2 : 0,
+                        borderRightWidth: isHovered ? 2 : 0,
+                        borderBottomWidth: isHovered ? 2 : 0,
+                        zIndex: isHovered ? 1 : 0, // Bring to front
+                    }
+                ]}
+            >
+                {children}
+            </Animated.View>
+        </Pressable>
+    );
+};
+
+const CrowdPatternsScreen = ({ navigation }) => {
     const [loading, setLoading] = useState(true);
     const [patterns, setPatterns] = useState([]);
     const [slots, setSlots] = useState([]);
@@ -144,56 +201,53 @@ const CrowdPatternsScreen = () => {
     return (
         <View style={styles.container}>
             {/* Header */}
-            <View style={styles.header}>
-                <Text style={styles.title}>Historical Patterns</Text>
-                <Text style={styles.subtitle}>Analyze peak hours and trends</Text>
-            </View>
+            <LinearGradient
+                colors={[colors.brownieDark, colors.brownie]}
+                style={styles.header}
+                start={{ x: 0, y: 0 }}
+                end={{ x: 0, y: 1 }}
+            >
+                <Text style={styles.headerTitle}>Historical Patterns</Text>
+                <Text style={styles.headerSubtitle}>Analyze peak hours and trends</Text>
+            </LinearGradient>
 
             {/* Filters Section */}
             <View style={styles.filtersContainer}>
-                {/* Slot Picker */}
-                <View style={styles.filterGroup}>
-                    <Text style={styles.filterLabel}>Select Slot</Text>
-                    <View style={styles.pickerContainer}>
-                        <Picker
-                            selectedValue={selectedSlot}
-                            onValueChange={(value) => setSelectedSlot(value)}
-                            style={styles.picker}
-                        >
-                            {slots.map(slot => (
-                                <Picker.Item
-                                    key={slot._id}
-                                    label={`${slot.name} (${slot.startTime} - ${slot.endTime})`}
-                                    value={slot._id}
-                                />
-                            ))}
-                        </Picker>
-                    </View>
-                </View>
-
-                {/* Date Range Selection Buttons */}
-                <View style={styles.filterGroup}>
-                    <Text style={styles.filterLabel}>Time Period</Text>
-                    <View style={styles.dateRangeButtons}>
-                        {[7, 14, 30].map(days => (
-                            <TouchableOpacity
-                                key={days}
-                                style={[
-                                    styles.dateRangeButton,
-                                    dateRange === days && styles.dateRangeButtonActive
-                                ]}
-                                onPress={() => setDateRange(days)}
+                <View style={styles.filtersRow}>
+                    {/* Slot Picker */}
+                    <View style={styles.filterGroup}>
+                        <Text style={styles.filterLabel}>Select Slot</Text>
+                        <View style={styles.pickerContainer}>
+                            <Picker
+                                selectedValue={selectedSlot}
+                                onValueChange={(value) => setSelectedSlot(value)}
+                                style={styles.picker}
                             >
-                                <Text
-                                    style={[
-                                        styles.dateRangeText,
-                                        dateRange === days && styles.dateRangeTextActive
-                                    ]}
-                                >
-                                    {days} Days
-                                </Text>
-                            </TouchableOpacity>
-                        ))}
+                                {slots.map(slot => (
+                                    <Picker.Item
+                                        key={slot._id}
+                                        label={`${slot.name} (${slot.startTime} - ${slot.endTime})`}
+                                        value={slot._id}
+                                    />
+                                ))}
+                            </Picker>
+                        </View>
+                    </View>
+
+                    {/* Time Period Picker */}
+                    <View style={styles.filterGroup}>
+                        <Text style={styles.filterLabel}>Time Period</Text>
+                        <View style={styles.pickerContainer}>
+                            <Picker
+                                selectedValue={dateRange}
+                                onValueChange={(value) => setDateRange(value)}
+                                style={styles.picker}
+                            >
+                                <Picker.Item label="7 Days" value={7} />
+                                <Picker.Item label="14 Days" value={14} />
+                                <Picker.Item label="30 Days" value={30} />
+                            </Picker>
+                        </View>
                     </View>
                 </View>
             </View>
@@ -236,7 +290,7 @@ const CrowdPatternsScreen = () => {
                         <View style={styles.summarySection}>
                             <Text style={styles.sectionTitle}>Summary</Text>
                             <View style={styles.summaryGrid}>
-                                <View style={styles.summaryCard}>
+                                <HoverableCard style={styles.summaryCard}>
                                     <MaterialCommunityIcons
                                         name="chart-areaspline"
                                         size={32}
@@ -244,8 +298,8 @@ const CrowdPatternsScreen = () => {
                                     />
                                     <Text style={styles.summaryValue}>{avgOccupancy}%</Text>
                                     <Text style={styles.summaryLabel}>Avg Occupancy</Text>
-                                </View>
-                                <View style={styles.summaryCard}>
+                                </HoverableCard>
+                                <HoverableCard style={styles.summaryCard}>
                                     <MaterialCommunityIcons
                                         name="calendar-clock"
                                         size={32}
@@ -253,7 +307,7 @@ const CrowdPatternsScreen = () => {
                                     />
                                     <Text style={styles.summaryValue}>{patterns.length}</Text>
                                     <Text style={styles.summaryLabel}>Days Analyzed</Text>
-                                </View>
+                                </HoverableCard>
                             </View>
                         </View>
 
@@ -289,6 +343,7 @@ const CrowdPatternsScreen = () => {
                             historicalData={patterns}
                             slotName={selectedSlotName}
                             title="Hourly Crowd Pattern"
+                            height={200}
                         />
 
                         <View style={{ height: 20 }} />
@@ -306,21 +361,25 @@ const styles = StyleSheet.create({
     },
     header: {
         paddingHorizontal: 20,
-        paddingTop: 20,
-        paddingBottom: 12,
-        backgroundColor: colors.white,
-        borderBottomWidth: 1,
-        borderBottomColor: colors.lightGray,
+        paddingTop: 40, // Reduced from standard to be more compact
+        paddingBottom: 15,
+        backgroundColor: colors.brownie, // Brownie background
+        elevation: 5,
+        shadowColor: '#000',
+        shadowOffset: { width: 0, height: 2 },
+        shadowOpacity: 0.2,
+        shadowRadius: 4,
     },
-    title: {
-        fontSize: 24,
+    headerTitle: {
+        fontSize: 22,
         fontWeight: 'bold',
-        color: colors.brownie,
+        color: colors.white, // White text
     },
-    subtitle: {
-        fontSize: 14,
-        color: colors.gray,
+    headerSubtitle: {
+        fontSize: 13,
+        color: colors.cream, // Cream/White text
         marginTop: 2,
+        opacity: 0.9,
     },
     filtersContainer: {
         backgroundColor: colors.white,
@@ -329,8 +388,13 @@ const styles = StyleSheet.create({
         borderBottomWidth: 1,
         borderBottomColor: colors.lightGray,
     },
+    filtersRow: {
+        flexDirection: 'row',
+        gap: 12, // Space between side-by-side filters
+    },
     filterGroup: {
-        marginBottom: 16,
+        flex: 1, // Share space equally
+        // marginBottom removed as they are now side-by-side in one row
     },
     filterLabel: {
         fontSize: 14,
@@ -338,13 +402,28 @@ const styles = StyleSheet.create({
         color: colors.brownie,
         marginBottom: 8,
     },
+    // Updated Picker Container for "Classy/Professional" look
     pickerContainer: {
-        backgroundColor: colors.cream,
-        borderRadius: 8,
+        backgroundColor: colors.cream, // Changed from white to cream for more color
+        borderWidth: 1,
+        borderColor: colors.brownie,
+        borderRadius: 12, // More rounded
         overflow: 'hidden',
+        height: 55, // Slightly taller
+        justifyContent: 'center',
+        paddingHorizontal: 8,
     },
     picker: {
         height: 50,
+        width: '100%',
+        color: colors.brownie,
+        backgroundColor: 'transparent',
+        borderWidth: 0, // Ensure no default border
+        ...Platform.select({
+            web: {
+                outlineStyle: 'none', // Remove web focus ring/outline
+            },
+        }),
     },
     dateRangeButtons: {
         flexDirection: 'row',
@@ -432,13 +511,17 @@ const styles = StyleSheet.create({
         flex: 1,
         backgroundColor: colors.white,
         borderRadius: 12,
-        padding: 20,
+        padding: 16,
         alignItems: 'center',
+        // Left outline as requested
+        borderLeftWidth: 4,
+        borderLeftColor: colors.brownie,
+        // Soft shadow
         shadowColor: '#000',
         shadowOffset: { width: 0, height: 2 },
-        shadowOpacity: 0.1,
+        shadowOpacity: 0.05,
         shadowRadius: 4,
-        elevation: 3,
+        elevation: 2,
     },
     summaryValue: {
         fontSize: 28,

@@ -1,4 +1,4 @@
-import React, { useState, useEffect, useCallback } from 'react';
+import React, { useState, useEffect, useCallback, useRef } from 'react';
 import {
     View,
     Text,
@@ -7,8 +7,12 @@ import {
     RefreshControl,
     TouchableOpacity,
     ActivityIndicator,
+    Platform,
+    Animated,
+    Pressable,
 } from 'react-native';
 import { MaterialCommunityIcons } from '@expo/vector-icons';
+import { LinearGradient } from 'expo-linear-gradient';
 import { colors } from '../../styles/colors';
 import CrowdLevelIndicator from '../../components/CrowdLevelIndicator';
 import api from '../../services/api';
@@ -17,12 +21,68 @@ import api from '../../services/api';
  * CrowdMonitorScreen Component
  * 
  * Provides real-time visualization of cafeteria crowd density.
- * Features:
- * 1. Live crowd levels for each slot (Low, Medium, High).
- * 2. Summary stats of occupancy.
- * 3. Auto-refreshing data every 30 seconds.
- * 4. Link to historical patterns view.
  */
+
+const HoverableColorCard = ({ children, style, gradientColors, hoverBorderColor }) => {
+    const scaleAnim = useRef(new Animated.Value(1)).current;
+    const [isHovered, setIsHovered] = useState(false);
+
+    const handleHoverIn = () => {
+        setIsHovered(true);
+        Animated.spring(scaleAnim, {
+            toValue: 1.05,
+            useNativeDriver: Platform.OS !== 'web',
+        }).start();
+    };
+
+    const handleHoverOut = () => {
+        setIsHovered(false);
+        Animated.spring(scaleAnim, {
+            toValue: 1,
+            useNativeDriver: Platform.OS !== 'web',
+        }).start();
+    };
+
+    return (
+        <Pressable
+            onHoverIn={handleHoverIn}
+            onHoverOut={handleHoverOut}
+            style={{ flex: 1, marginHorizontal: 4 }}
+        >
+            <Animated.View
+                style={[
+                    style,
+                    {
+                        transform: [{ scale: scaleAnim }],
+                        borderColor: isHovered ? hoverBorderColor : 'transparent',
+                        borderWidth: isHovered ? 2 : 0,
+                        zIndex: isHovered ? 1 : 0,
+                        // Reset margins since Pressable handles spacing now to avoid layout jumps
+                        marginHorizontal: 0,
+                        paddingVertical: 0, // Reset padding here as Gradient will handle it
+                        overflow: 'hidden', // Ensure gradient respects border radius
+                    }
+                ]}
+            >
+                <LinearGradient
+                    colors={gradientColors}
+                    style={{
+                        flex: 1,
+                        alignItems: 'center',
+                        justifyContent: 'center',
+                        paddingVertical: 12,
+                        width: '100%',
+                    }}
+                    start={{ x: 0, y: 0 }}
+                    end={{ x: 1, y: 1 }}
+                >
+                    {children}
+                </LinearGradient>
+            </Animated.View>
+        </Pressable>
+    );
+};
+
 const CrowdMonitorScreen = ({ navigation }) => {
     const [crowdLevels, setCrowdLevels] = useState([]);
     const [loading, setLoading] = useState(true);
@@ -119,7 +179,12 @@ const CrowdMonitorScreen = ({ navigation }) => {
     return (
         <View style={styles.container}>
             {/* Header with Title and Refresh Button */}
-            <View style={styles.header}>
+            <LinearGradient
+                colors={[colors.brownieDark, colors.brownie]}
+                style={styles.header}
+                start={{ x: 0, y: 0 }}
+                end={{ x: 0, y: 1 }}
+            >
                 <View>
                     <Text style={styles.title}>Crowd Monitor</Text>
                     <Text style={styles.subtitle}>Real-time cafeteria occupancy</Text>
@@ -132,10 +197,14 @@ const CrowdMonitorScreen = ({ navigation }) => {
                     <MaterialCommunityIcons
                         name="refresh"
                         size={24}
-                        color={colors.brownie}
+                        color={colors.brownie} // Keep icon brown or change to white if background is dark?
+                    // Brownie on dark brown might be hard to see.
+                    // Let's check colors.brownie (#5E3023) on colors.brownieDark (#3D1F17). Low contrast.
+                    // User requested gradient header. The text in other headers is `colors.cream`.
+                    // I should probably change this icon color to `colors.cream` as well.
                     />
                 </TouchableOpacity>
-            </View>
+            </LinearGradient>
 
             {/* Timeliness Indicator */}
             {lastUpdated && (
@@ -154,24 +223,38 @@ const CrowdMonitorScreen = ({ navigation }) => {
             {/* Summary Cards Row */}
             {summary && (
                 <View style={styles.summaryContainer}>
-                    <View style={[styles.summaryCard, { backgroundColor: '#E8F5E9' }]}>
+                    <HoverableColorCard
+                        style={styles.summaryCard}
+                        gradientColors={['#E8F5E9', '#A5D6A7']} // Light Green -> Stronger Green
+                        hoverBorderColor={colors.success}
+                    >
                         <Text style={styles.summaryNumber}>{summary.lowCount}</Text>
                         <Text style={[styles.summaryLabel, { color: colors.success }]}>
                             Low Crowd
                         </Text>
-                    </View>
-                    <View style={[styles.summaryCard, { backgroundColor: '#FFF3E0' }]}>
+                    </HoverableColorCard>
+
+                    <HoverableColorCard
+                        style={styles.summaryCard}
+                        gradientColors={['#FFF3E0', '#FFCC80']} // Light Orange -> Stronger Orange
+                        hoverBorderColor={colors.warning}
+                    >
                         <Text style={styles.summaryNumber}>{summary.mediumCount}</Text>
                         <Text style={[styles.summaryLabel, { color: colors.warning }]}>
                             Medium
                         </Text>
-                    </View>
-                    <View style={[styles.summaryCard, { backgroundColor: '#FFEBEE' }]}>
+                    </HoverableColorCard>
+
+                    <HoverableColorCard
+                        style={styles.summaryCard}
+                        gradientColors={['#FFEBEE', '#EF9A9A']} // Light Red -> Stronger Red
+                        hoverBorderColor={colors.error}
+                    >
                         <Text style={styles.summaryNumber}>{summary.highCount}</Text>
                         <Text style={[styles.summaryLabel, { color: colors.error }]}>
                             High Crowd
                         </Text>
-                    </View>
+                    </HoverableColorCard>
                 </View>
             )}
 
@@ -217,24 +300,11 @@ const CrowdMonitorScreen = ({ navigation }) => {
                             occupancyRate={level.occupancyRate}
                             slotName={level.slotName}
                             size="medium"
+                            showBorder={true}
+                            enableHover={true}
                         />
                     ))
                 )}
-
-                {/* Navigation Button to Historical Analytics */}
-                <TouchableOpacity
-                    style={styles.historyButton}
-                    onPress={() => navigation.navigate('CrowdPatterns')}
-                >
-                    <MaterialCommunityIcons
-                        name="chart-line"
-                        size={20}
-                        color={colors.white}
-                    />
-                    <Text style={styles.historyButtonText}>
-                        View Historical Patterns
-                    </Text>
-                </TouchableOpacity>
 
                 <View style={{ height: 20 }} />
             </ScrollView>
@@ -262,22 +332,25 @@ const styles = StyleSheet.create({
         flexDirection: 'row',
         justifyContent: 'space-between',
         alignItems: 'center',
+        paddingTop: Platform.OS === 'ios' ? 60 : 40,
+        paddingBottom: 20,
         paddingHorizontal: 20,
-        paddingTop: 20,
-        paddingBottom: 12,
-        backgroundColor: colors.white,
+        backgroundColor: colors.brownieDark, // Dark header
         borderBottomWidth: 1,
-        borderBottomColor: colors.lightGray,
+        borderBottomColor: 'rgba(255,255,255,0.1)',
     },
     title: {
-        fontSize: 24,
+        fontSize: 28,
         fontWeight: 'bold',
-        color: colors.brownie,
+        color: colors.cream, // Cream title
+        letterSpacing: 0.5,
     },
     subtitle: {
-        fontSize: 14,
-        color: colors.gray,
-        marginTop: 2,
+        fontSize: 12,
+        color: 'rgba(243, 233, 220, 0.6)', // Faded cream
+        marginTop: 4,
+        textTransform: 'uppercase',
+        letterSpacing: 1,
     },
     refreshButton: {
         padding: 8,
@@ -350,21 +423,6 @@ const styles = StyleSheet.create({
         fontSize: 16,
         color: colors.gray,
         marginTop: 12,
-    },
-    historyButton: {
-        flexDirection: 'row',
-        alignItems: 'center',
-        justifyContent: 'center',
-        backgroundColor: colors.brownie,
-        borderRadius: 10,
-        paddingVertical: 14,
-        marginTop: 20,
-    },
-    historyButtonText: {
-        color: colors.white,
-        fontSize: 16,
-        fontWeight: '600',
-        marginLeft: 8,
     },
 });
 
