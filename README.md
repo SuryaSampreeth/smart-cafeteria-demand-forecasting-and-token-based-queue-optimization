@@ -152,6 +152,57 @@ smart-cafetria-model-2/
 └── README.md                        # This file
 ```
 
+## Project Architecture
+
+```
+flowchart TD
+
+    %% Client Layer
+    subgraph Client
+        A[Mobile App - Expo]
+        B[Web Dashboard - Expo]
+    end
+
+    %% Backend Layer
+    subgraph Backend
+        D[Express Server]
+        E[Auth Middleware]
+        F[Role Middleware]
+        G[Auth Controller]
+        H[Booking Controller]
+        I[Menu Controller]
+        J[Crowd Controller]
+        K[Admin Controller]
+        L[Staff Controller]
+    end
+
+    %% Database Layer
+    subgraph Database
+        M[(MongoDB Atlas)]
+    end
+
+    %% Flow
+    A -->|HTTPS| D
+    B -->|HTTPS| D
+
+    D --> E
+    E --> F
+
+    F --> G
+    F --> H
+    F --> I
+    F --> J
+    F --> K
+    F --> L
+
+    G --> M
+    H --> M
+    I --> M
+    J --> M
+    K --> M
+    L --> M
+```
+
 ## Getting Started
 
 ### Prerequisites
@@ -284,3 +335,4 @@ This project is licensed under the ISC License.
 ## Contact
 
 For questions or support, please open an issue in the repository.
+
