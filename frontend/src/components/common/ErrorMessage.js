@@ -1,0 +1,32 @@
+import React from 'react';
+import { View, Text, StyleSheet } from 'react-native';
+import { colors } from '../../styles/colors';
+import { typography } from '../../styles/typography';
+
+const ErrorMessage = ({ message }) => {
+    if (!message) return null;
+
+    return (
+        <View style={styles.container}>
+            <Text style={styles.text}>{message}</Text>
+        </View>
+    );
+};
+
+const styles = StyleSheet.create({
+    container: {
+        backgroundColor: colors.error + '20',
+        borderLeftWidth: 4,
+        borderLeftColor: colors.error,
+        padding: 12,
+        marginVertical: 8,
+        marginHorizontal: 16,
+        borderRadius: 4,
+    },
+    text: {
+        color: colors.error,
+        ...typography.body,
+    },
+});
+
+export default ErrorMessage;

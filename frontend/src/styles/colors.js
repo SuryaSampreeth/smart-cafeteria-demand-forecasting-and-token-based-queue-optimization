@@ -1,0 +1,15 @@
+export const colors = {
+    cream: '#F3E9DC',
+    brownie: '#5E3023',
+    brownieLight: '#7A4A3A',
+    brownieDark: '#3D1F17',
+    success: '#4CAF50',
+    warning: '#FF9800',
+    error: '#F44336',
+    info: '#2196F3',
+    white: '#FFFFFF',
+    black: '#000000',
+    gray: '#9E9E9E',
+    lightGray: '#E0E0E0',
+    background: '#FFF8F0',
+};
