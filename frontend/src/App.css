@@ -1,0 +1,5 @@
+/* App-level styles - theme is managed by index.css */
+#root {
+  width: 100%;
+  min-height: 100vh;
+}
