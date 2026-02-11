@@ -1,4 +1,4 @@
-import React, { useState, useEffect, useCallback } from 'react';
+import React, { useState, useEffect, useCallback, useRef } from 'react';
 import {
     View,
     Text,
@@ -7,45 +7,88 @@ import {
     RefreshControl,
     ActivityIndicator,
     TouchableOpacity,
+    Platform,
+    Dimensions,
+    Animated,
+    Pressable,
 } from 'react-native';
+import { LinearGradient } from 'expo-linear-gradient';
 import { MaterialCommunityIcons } from '@expo/vector-icons';
 import { colors } from '../../styles/colors';
 import CrowdLevelIndicator from '../../components/CrowdLevelIndicator';
-import AlertCard from '../../components/AlertCard';
 import api from '../../services/api';
+
+const { width } = Dimensions.get('window');
 
 /*
  * StaffCrowdDashboard
  * -------------------
- * A real-time monitoring tool for staff to track cafeteria crowd levels.
- * 
- * Key Features:
- * 1. Auto-refreshing data (polling every 20s).
- * 2. Visual indicators for crowd density (Red/Yellow/Green).
- * 3. AI-driven/Logic-driven recommendations (e.g., "Speed up service").
- * 4. Active alert display for critical situations.
+ * High-Impact Visualization for Real-Time Crowd Monitoring.
  */
+
+const HoverCard = ({ children, baseStyle, hoverColor }) => {
+    const [isHovered, setIsHovered] = useState(false);
+    const translateY = useRef(new Animated.Value(0)).current;
+
+    const handleHoverIn = () => {
+        setIsHovered(true);
+        Animated.timing(translateY, {
+            toValue: -8,
+            duration: 200,
+            useNativeDriver: Platform.OS !== 'web',
+        }).start();
+    };
+
+    const handleHoverOut = () => {
+        setIsHovered(false);
+        Animated.timing(translateY, {
+            toValue: 0,
+            duration: 200,
+            useNativeDriver: Platform.OS !== 'web',
+        }).start();
+    };
+
+    return (
+        <Pressable
+            onHoverIn={handleHoverIn}
+            onHoverOut={handleHoverOut}
+            style={{ marginBottom: baseStyle.marginBottom }}
+        >
+            <Animated.View style={[
+                baseStyle,
+                {
+                    marginBottom: 0,
+                    transform: [{ translateY }],
+                    shadowColor: isHovered ? hoverColor : '#000',
+                    shadowOpacity: isHovered ? 0.4 : 0.08, // Increased opacity on hover
+                    shadowRadius: isHovered ? 12 : 10,
+                    elevation: isHovered ? 8 : 3,
+                    borderColor: isHovered ? hoverColor : 'transparent',
+                    borderWidth: isHovered ? 1.5 : 0,
+                    backgroundColor: '#FFFFFF', // Ensure background is white for the color tint to work if we added it, but shadow is main effect
+                }
+            ]}>
+                {children}
+            </Animated.View>
+        </Pressable>
+    );
+};
+
 const StaffCrowdDashboard = () => {
     // State for dashboard metrics
     const [loading, setLoading] = useState(true);
     const [refreshing, setRefreshing] = useState(false);
     const [dashboardData, setDashboardData] = useState(null);
-    const [lastUpdated, setLastUpdated] = useState(null); // Timestamp of last successful fetch
+    const [lastUpdated, setLastUpdated] = useState(null);
     const [error, setError] = useState(null);
 
-    // Auto-refresh interval (20 seconds)
     const AUTO_REFRESH_INTERVAL = 20000;
 
-    /**
-     * Fetches the latest crowd statistics.
-     */
     const fetchDashboardData = async (showLoading = true) => {
         try {
             if (showLoading) setLoading(true);
             setError(null);
-
             const response = await api.getStaffCrowdDashboard();
-
             if (response.data && response.data.success) {
                 setDashboardData(response.data);
                 setLastUpdated(new Date());
@@ -59,282 +102,255 @@ const StaffCrowdDashboard = () => {
         }
     };
 
-    /**
-     * Manual refresh handler
-     */
     const onRefresh = useCallback(() => {
         setRefreshing(true);
         fetchDashboardData(false);
     }, []);
 
-    // Effect: Initial fetch + Interval setup
     useEffect(() => {
         fetchDashboardData();
-
-        // Set up auto-refresh polling
         const interval = setInterval(() => {
             fetchDashboardData(false);
         }, AUTO_REFRESH_INTERVAL);
-
-        // Cleanup interval on unmount to prevent memory leaks
         return () => clearInterval(interval);
     }, []);
 
-    /**
-     * Helper to show relative time
-     */
     const formatLastUpdated = () => {
         if (!lastUpdated) return '';
-
         const now = new Date();
         const diffSeconds = Math.floor((now - lastUpdated) / 1000);
-
         if (diffSeconds < 10) return 'Just now';
-        if (diffSeconds < 60) return `${diffSeconds}s ago`;
-
-        const diffMinutes = Math.floor(diffSeconds / 60);
-        return `${diffMinutes}m ago`;
+        return `${Math.floor(diffSeconds / 60)}m ago`;
     };
 
     if (loading && !dashboardData) {
         return (
             <View style={styles.centerContainer}>
-                <ActivityIndicator size="large" color={colors.brownie} />
-                <Text style={styles.loadingText}>Loading dashboard...</Text>
+                <ActivityIndicator size="large" color="#5E3023" />
+                <Text style={styles.loadingText}>Loading Dashboard...</Text>
             </View>
         );
     }
 
-    // Destructure data safely
     const summary = dashboardData?.summary || {};
     const slots = dashboardData?.slots || [];
     const activeAlerts = dashboardData?.activeAlerts || [];
 
-    // Determine color based on average occupancy
-    const getOccupancyColor = (occupancy) => {
-        if (occupancy >= 70) return colors.error;   // Critical
-        if (occupancy >= 40) return colors.warning; // High
-        return colors.success;                      // Normal
-    };
-
     return (
         <View style={styles.container}>
-            {/* Header: Title + Refresh Button */}
-            <View style={styles.header}>
-                <View>
-                    <Text style={styles.title}>Live Crowd Dashboard</Text>
-                    <Text style={styles.subtitle}>Monitor cafeteria occupancy</Text>
+            {/* 1. High-Impact Header with Pattern Overlay Effect */}
+            <LinearGradient
+                colors={['#2D1B16', '#5E3023']} // Deep rich brown gradient
+                start={{ x: 0, y: 0 }}
+                end={{ x: 1, y: 1 }}
+                style={styles.headerGradient}
+            >
+                <View style={styles.headerContent}>
+                    <View style={{ flexDirection: 'row', alignItems: 'center' }}>
+                        {/* Logo */}
+                        <View style={styles.logoContainer}>
+                            <MaterialCommunityIcons name="silverware-variant" size={24} color="#5E3023" />
+                        </View>
+                        <View>
+                            <Text style={styles.title}>CROWD ANALYTICS</Text>
+                            <View style={styles.liveTagContainer}>
+                                <View style={styles.liveDotPulsing} />
+                                <Text style={styles.subtitle}>LIVE MONITORING</Text>
+                            </View>
+                        </View>
+                    </View>
+                    <TouchableOpacity
+                        style={styles.refreshButton}
+                        onPress={onRefresh}
+                        disabled={refreshing}
+                    >
+                        <MaterialCommunityIcons name="refresh" size={22} color="#FFFFFF" />
+                    </TouchableOpacity>
                 </View>
-                <TouchableOpacity
-                    style={styles.refreshButton}
-                    onPress={onRefresh}
-                    disabled={refreshing}
-                >
-                    <MaterialCommunityIcons
-                        name="refresh"
-                        size={24}
-                        color={colors.brownie}
-                    />
-                </TouchableOpacity>
-            </View>
-
-            {/* Last Updated Indicator */}
-            {lastUpdated && (
-                <View style={styles.updateInfo}>
-                    <MaterialCommunityIcons
-                        name="clock-outline"
-                        size={14}
-                        color={colors.gray}
-                    />
-                    <Text style={styles.updateText}>
-                        Updated {formatLastUpdated()} • Auto-refreshes every 20s
-                    </Text>
-                </View>
-            )}
-
-            {/* Error Message */}
-            {error && (
-                <View style={styles.errorContainer}>
-                    <MaterialCommunityIcons
-                        name="alert-circle-outline"
-                        size={20}
-                        color={colors.error}
-                    />
-                    <Text style={styles.errorText}>{error}</Text>
-                </View>
-            )}
+            </LinearGradient>
 
             <ScrollView
                 style={styles.scrollView}
+                contentContainerStyle={styles.scrollContent}
                 refreshControl={
-                    <RefreshControl
-                        refreshing={refreshing}
-                        onRefresh={onRefresh}
-                        colors={[colors.brownie]}
-                        tintColor={colors.brownie}
-                    />
+                    <RefreshControl refreshing={refreshing} onRefresh={onRefresh} tintColor="#5E3023" />
                 }
                 showsVerticalScrollIndicator={false}
             >
-                {/* Summary Cards Grid */}
-                <View style={styles.summarySection}>
-                    <View style={styles.summaryRow}>
-                        <View style={[styles.summaryCard, { borderLeftColor: colors.info }]}>
-                            <MaterialCommunityIcons
-                                name="account-group"
-                                size={32}
-                                color={colors.info}
-                            />
-                            <Text style={styles.summaryValue}>{summary.totalActiveBookings || 0}</Text>
-                            <Text style={styles.summaryLabel}>Active Tokens</Text>
+                {/* 2. Key Metrics - Glassmorphic Cards with Gradients */}
+                <View style={styles.metricsRow}>
+                    {/* Active Tokens Card */}
+                    <LinearGradient
+                        colors={['#FFFFFF', '#F0F9FF']}
+                        style={styles.metricCard}
+                    >
+                        <LinearGradient
+                            colors={['#0EA5E9', '#0284C7']}
+                            style={styles.iconCircle}
+                        >
+                            <MaterialCommunityIcons name="account-group" size={24} color="#FFF" />
+                        </LinearGradient>
+                        <View style={styles.metricTextContainer}>
+                            <Text style={styles.metricValue}>{summary.totalActiveBookings || 0}</Text>
+                            <Text style={styles.metricLabel}>ACTIVE TOKENS</Text>
                         </View>
-                        <View style={[styles.summaryCard, { borderLeftColor: getOccupancyColor(summary.averageOccupancy || 0) }]}>
-                            <MaterialCommunityIcons
-                                name="chart-donut"
-                                size={32}
-                                color={getOccupancyColor(summary.averageOccupancy || 0)}
-                            />
-                            <Text style={styles.summaryValue}>{summary.averageOccupancy || 0}%</Text>
-                            <Text style={styles.summaryLabel}>Avg Occupancy</Text>
+                    </LinearGradient>
+
+                    {/* Occupancy Card */}
+                    <LinearGradient
+                        colors={['#FFFFFF', '#F0FDF4']}
+                        style={styles.metricCard}
+                    >
+                        <LinearGradient
+                            colors={['#22C55E', '#16A34A']}
+                            style={styles.iconCircle}
+                        >
+                            <MaterialCommunityIcons name="chart-pie" size={24} color="#FFF" />
+                        </LinearGradient>
+                        <View style={styles.metricTextContainer}>
+                            <Text style={styles.metricValue}>{summary.averageOccupancy || 0}%</Text>
+                            <Text style={styles.metricLabel}>OCCUPANCY</Text>
                         </View>
-                    </View>
-                    <View style={styles.summaryRow}>
-                        <View style={[styles.summaryCard, { borderLeftColor: colors.error }]}>
-                            <MaterialCommunityIcons
-                                name="alert-circle"
-                                size={32}
-                                color={colors.error}
-                            />
-                            <Text style={styles.summaryValue}>{summary.highCrowdSlotCount || 0}</Text>
-                            <Text style={styles.summaryLabel}>High Crowd Slots</Text>
-                        </View>
-                        <View style={[styles.summaryCard, { borderLeftColor: colors.warning }]}>
-                            <MaterialCommunityIcons
-                                name="bell-alert"
-                                size={32}
-                                color={colors.warning}
-                            />
-                            <Text style={styles.summaryValue}>{summary.activeAlertCount || 0}</Text>
-                            <Text style={styles.summaryLabel}>Active Alerts</Text>
-                        </View>
-                    </View>
+                    </LinearGradient>
                 </View>
 
-                {/* Active Alerts List */}
+                {/* 3. Alerts Section with Glow Effect */}
                 {activeAlerts.length > 0 && (
-                    <View style={styles.alertsSection}>
-                        <View style={styles.sectionHeader}>
-                            <MaterialCommunityIcons
-                                name="bell-alert-outline"
-                                size={20}
-                                color={colors.brownie}
-                            />
-                            <Text style={styles.sectionTitle}>Active Alerts</Text>
+                    <View style={styles.sectionContainer}>
+                        <View style={styles.sectionHeaderRow}>
+                            <MaterialCommunityIcons name="alert-octagon" size={20} color="#DC2626" />
+                            <Text style={[styles.sectionTitle, { color: '#DC2626' }]}>CRITICAL ALERTS</Text>
                         </View>
                         {activeAlerts.map((alert, index) => (
-                            <View key={index} style={styles.alertItem}>
-                                <MaterialCommunityIcons
-                                    name="alert-circle"
-                                    size={20}
-                                    color={colors.error}
-                                />
-                                <View style={styles.alertContent}>
-                                    <Text style={styles.alertSlot}>{alert.slotName}</Text>
-                                    <Text style={styles.alertMessage}>{alert.message}</Text>
-                                </View>
+                            <View key={index} style={styles.alertCardGlow}>
+                                <LinearGradient
+                                    colors={['#FEF2F2', '#FFF']}
+                                    style={styles.alertCardInner}
+                                >
+                                    <View style={styles.alertIconBar} />
+                                    <View style={styles.alertContent}>
+                                        <Text style={styles.alertSlotName}>{alert.slotName}</Text>
+                                        <Text style={styles.alertMsg}>{alert.message}</Text>
+                                    </View>
+                                </LinearGradient>
                             </View>
                         ))}
                     </View>
                 )}
 
-                {/* Slot-Specific Serving Recommendations */}
-                <View style={styles.recommendationsSection}>
-                    <View style={styles.sectionHeader}>
-                        <MaterialCommunityIcons
-                            name="lightbulb-on-outline"
-                            size={20}
-                            color={colors.brownie}
-                        />
-                        <Text style={styles.sectionTitle}>Serving Recommendations</Text>
+                {/* 4. Insights Section - Tech/Data Feel */}
+                <View style={styles.sectionContainer}>
+                    <View style={styles.sectionHeaderRow}>
+                        <MaterialCommunityIcons name="lightning-bolt" size={20} color="#D97706" />
+                        <Text style={[styles.sectionTitle, { color: '#D97706' }]}>AI RECOMMENDATIONS</Text>
                     </View>
                     {slots.map((slot, index) => {
-                        // Dynamic recommendation logic based on occupancy
-                        let recommendation = '';
-                        let icon = '';
-                        let bgColor = '';
+                        if (slot.isActive === false) return null; // Skip inactive slots for recommendations
 
+                        let recommendation = '';
+                        let accentColor = '#10B981';
                         if (slot.occupancyRate >= 90) {
-                            icon = '🚨';
-                            bgColor = '#FFEBEE';
-                            recommendation = `Critical! Urgently increase ${slot.slotName} serving speed and consider opening additional counters.`;
+                            accentColor = '#DC2626';
+                            recommendation = '⚠️ Overload: Open additional counters immediately.';
                         } else if (slot.occupancyRate >= 70) {
-                            icon = '⚡';
-                            bgColor = '#FFF3E0';
-                            recommendation = `High demand at ${slot.slotName}. Speed up service to reduce ${slot.avgWaitTime} min wait time.`;
-                        } else if (slot.occupancyRate >= 40) {
-                            icon = '👍';
-                            bgColor = '#E8F5E9';
-                            recommendation = `${slot.slotName} running smoothly. Maintain current pace.`;
+                            accentColor = '#F59E0B';
+                            recommendation = '⚡ High Traffic: Optimize queue flow.';
                         } else {
-                            icon = '✅';
-                            bgColor = '#E3F2FD';
-                            recommendation = `Low crowd at ${slot.slotName}. Normal speed sufficient.`;
+                            recommendation = '✅ Optimal Flow: Maintain current pace.';
                         }
 
                         return (
-                            <View key={index} style={[styles.recommendationCard, { backgroundColor: bgColor }]}>
-                                <Text style={styles.recommendationIcon}>{icon}</Text>
-                                <View style={styles.recommendationTextContainer}>
-                                    <Text style={styles.slotRecommendationTitle}>{slot.slotName}</Text>
-                                    <Text style={styles.slotRecommendationText}>{recommendation}</Text>
-                                    <View style={styles.recommendationStats}>
-                                        <Text style={styles.recommendationStat}>
-                                            {slot.activeBookings} active • {slot.occupancyRate}% capacity
-                                        </Text>
-                                    </View>
+                            <HoverCard key={index} baseStyle={styles.insightCard} hoverColor={accentColor}>
+                                <View style={[styles.insightAccent, { backgroundColor: accentColor }]} />
+                                <View style={styles.insightContent}>
+                                    <Text style={styles.insightSlot}>{slot.slotName}</Text>
+                                    <Text style={styles.insightText}>{recommendation}</Text>
                                 </View>
-                            </View>
+                            </HoverCard>
                         );
                     })}
                 </View>
 
-                {/* Live Crowd Levels by Slot */}
-                <View style={styles.slotsSection}>
-                    <Text style={styles.sectionTitle}>Live Crowd Levels by Slot</Text>
+                {/* 5. Live Slots - Advanced Cards */}
+                <View style={styles.sectionContainer}>
+                    <Text style={styles.sectionMainTitle}>LIVE SLOT STATUS</Text>
                     {slots.length === 0 ? (
                         <View style={styles.emptyContainer}>
-                            <Text style={styles.emptyText}>No active slots</Text>
+                            <Text style={styles.emptyText}>No active slots available</Text>
                         </View>
                     ) : (
-                        slots.map((slot, index) => (
-                            <View key={index}>
-                                {/* Visual Gauge Component */}
-                                <CrowdLevelIndicator
-                                    level={slot.crowdLevel}
-                                    occupancyRate={slot.occupancyRate}
-                                    slotName={slot.slotName}
-                                    size="medium"
-                                />
-                                <View style={styles.slotMetrics}>
-                                    <View style={styles.metricItem}>
-                                        <Text style={styles.metricLabel}>Active Tokens:</Text>
-                                        <Text style={styles.metricValue}>{slot.activeBookings}</Text>
+
+                        slots.map((slot, index) => {
+                            // Handle Inactive Slots
+                            if (slot.isActive === false) {
+                                return (
+                                    <View key={index} style={[styles.slotCardAdvanced, styles.inactiveCard]}>
+                                        <View style={styles.slotCardGradient}>
+                                            <View style={styles.slotHeader}>
+                                                <Text style={[styles.slotNameLarge, styles.inactiveText]}>{slot.slotName}</Text>
+                                                <View style={styles.inactiveBadge}>
+                                                    <Text style={styles.inactiveBadgeText}>NOT ACTIVE</Text>
+                                                </View>
+                                            </View>
+                                            <View style={styles.statsGrid}>
+                                                <View style={styles.statBox}>
+                                                    <Text style={styles.statLabel}>STATUS</Text>
+                                                    <Text style={styles.statValueInactive}>Closed</Text>
+                                                </View>
+                                            </View>
+                                        </View>
                                     </View>
-                                    <View style={styles.metricItem}>
-                                        <Text style={styles.metricLabel}>Capacity:</Text>
-                                        <Text style={styles.metricValue}>{slot.totalCapacity}</Text>
-                                    </View>
-                                    <View style={styles.metricItem}>
-                                        <Text style={styles.metricLabel}>Avg Wait:</Text>
-                                        <Text style={styles.metricValue}>{slot.avgWaitTime} min</Text>
-                                    </View>
-                                </View>
-                            </View>
-                        ))
+                                );
+                            }
+
+                            let hoverColor = '#10B981'; // Default Green
+                            if (slot.occupancyRate >= 90) hoverColor = '#DC2626'; // Red
+                            else if (slot.occupancyRate >= 70) hoverColor = '#F59E0B'; // Orange
+
+                            return (
+                                <HoverCard key={index} baseStyle={styles.slotCardAdvanced} hoverColor={hoverColor}>
+                                    <LinearGradient
+                                        colors={['#FFFFFF', '#F9FAFB']}
+                                        style={styles.slotCardGradient}
+                                    >
+                                        <View style={styles.slotHeader}>
+                                            <Text style={styles.slotNameLarge}>{slot.slotName}</Text>
+                                            <View style={styles.capacityBadge}>
+                                                <MaterialCommunityIcons name="human-queue" size={14} color="#6B7280" />
+                                                <Text style={styles.capacityText}>{slot.activeBookings}/{slot.totalCapacity}</Text>
+                                            </View>
+                                        </View>
+
+                                        <CrowdLevelIndicator
+                                            level={slot.crowdLevel}
+                                            occupancyRate={slot.occupancyRate}
+                                            slotName={slot.slotName}
+                                            size="medium"
+                                        />
+
+                                        <View style={styles.statsGrid}>
+                                            <View style={styles.statBox}>
+                                                <Text style={styles.statLabel}>WAIT TIME</Text>
+                                                <Text style={styles.statValue}>{slot.avgWaitTime} min</Text>
+                                            </View>
+                                            <View style={styles.verticalDivider} />
+                                            <View style={styles.statBox}>
+                                                <Text style={styles.statLabel}>STATUS</Text>
+                                                <Text style={[styles.statValue, {
+                                                    color: slot.occupancyRate > 80 ? '#DC2626' : '#059669'
+                                                }]}>
+                                                    {slot.occupancyRate > 80 ? 'Heavy' : 'Normal'}
+                                                </Text>
+                                            </View>
+                                        </View>
+                                    </LinearGradient>
+                                </HoverCard>
+                            );
+                        })
                     )}
                 </View>
 
-                <View style={{ height: 20 }} />
+                <View style={{ height: 40 }} />
             </ScrollView>
         </View>
     );
@@ -343,253 +359,333 @@ const StaffCrowdDashboard = () => {
 const styles = StyleSheet.create({
     container: {
         flex: 1,
-        backgroundColor: colors.background,
+        backgroundColor: '#F3F4F6',
     },
     centerContainer: {
         flex: 1,
         justifyContent: 'center',
         alignItems: 'center',
-        backgroundColor: colors.background,
+        backgroundColor: '#F3F4F6',
     },
     loadingText: {
-        marginTop: 12,
-        fontSize: 14,
-        color: colors.gray,
+        marginTop: 10,
+        color: '#6B7280',
+        fontWeight: '600',
     },
-    header: {
+    headerGradient: {
+        paddingTop: Platform.OS === 'ios' ? 40 : 20,
+        paddingBottom: 24,
+        paddingHorizontal: 20,
+        shadowColor: '#5E3023',
+        shadowOffset: { width: 0, height: 8 },
+        shadowOpacity: 0.3,
+        shadowRadius: 12,
+        elevation: 8,
+    },
+    headerContent: {
         flexDirection: 'row',
         justifyContent: 'space-between',
         alignItems: 'center',
-        paddingHorizontal: 20,
-        paddingTop: 20,
-        paddingBottom: 12,
-        backgroundColor: colors.white,
-        borderBottomWidth: 1,
-        borderBottomColor: colors.lightGray,
     },
     title: {
-        fontSize: 24,
-        fontWeight: 'bold',
-        color: colors.brownie,
+        fontSize: 26,
+        fontWeight: '900',
+        color: '#FFFFFF',
+        letterSpacing: 0.5,
+        marginBottom: 4,
+        fontFamily: Platform.OS === 'ios' ? 'Helvetica Neue' : 'sans-serif',
+    },
+    liveTagContainer: {
+        flexDirection: 'row',
+        alignItems: 'center',
+        backgroundColor: 'rgba(255,255,255,0.15)',
+        paddingHorizontal: 8,
+        paddingVertical: 4,
+        borderRadius: 12,
+        alignSelf: 'flex-start',
+    },
+    liveDotPulsing: {
+        width: 8,
+        height: 8,
+        backgroundColor: '#EF4444',
+        borderRadius: 4,
+        marginRight: 6,
+        shadowColor: '#EF4444',
+        shadowOffset: { width: 0, height: 0 },
+        shadowOpacity: 0.8,
+        shadowRadius: 6,
     },
     subtitle: {
-        fontSize: 14,
-        color: colors.gray,
-        marginTop: 2,
+        color: '#E5E7EB',
+        fontSize: 10,
+        fontWeight: '700',
+        letterSpacing: 1,
     },
     refreshButton: {
-        padding: 8,
-        borderRadius: 8,
-        backgroundColor: colors.cream,
-    },
-    updateInfo: {
-        flexDirection: 'row',
-        alignItems: 'center',
-        paddingHorizontal: 20,
-        paddingVertical: 8,
-        backgroundColor: colors.white,
-    },
-    updateText: {
-        fontSize: 12,
-        color: colors.gray,
-        marginLeft: 6,
-    },
-    errorContainer: {
-        flexDirection: 'row',
-        alignItems: 'center',
-        backgroundColor: '#FFEBEE',
-        paddingHorizontal: 16,
-        paddingVertical: 12,
-        marginHorizontal: 20,
-        marginTop: 12,
-        borderRadius: 8,
-    },
-    errorText: {
-        fontSize: 13,
-        color: colors.error,
-        marginLeft: 8,
-        flex: 1,
-    },
-    scrollView: {
-        flex: 1,
-    },
-    summarySection: {
-        paddingHorizontal: 20,
-        paddingTop: 16,
-    },
-    summaryRow: {
-        flexDirection: 'row',
-        marginBottom: 12,
-        gap: 12,
-    },
-    summaryCard: {
-        flex: 1,
-        backgroundColor: colors.white,
+        backgroundColor: 'rgba(255,255,255,0.2)',
+        padding: 10,
         borderRadius: 12,
-        padding: 16,
+    },
+    logoContainer: {
+        width: 48,
+        height: 48,
+        borderRadius: 14,
+        backgroundColor: 'rgba(255,255,255,0.95)',
+        justifyContent: 'center',
         alignItems: 'center',
+        marginRight: 12,
         shadowColor: '#000',
         shadowOffset: { width: 0, height: 2 },
         shadowOpacity: 0.1,
         shadowRadius: 4,
         elevation: 3,
-        borderLeftWidth: 4,
     },
-    summaryValue: {
-        fontSize: 28,
-        fontWeight: 'bold',
-        color: colors.brownie,
-        marginTop: 8,
+    scrollView: {
+        flex: 1,
+        marginTop: -10, // Slight overlap for design
     },
-    summaryLabel: {
-        fontSize: 12,
-        color: colors.gray,
-        marginTop: 4,
-        textAlign: 'center',
+    scrollContent: {
+        paddingTop: 20,
+        paddingHorizontal: 16,
     },
-    alertsSection: {
-        paddingHorizontal: 20,
-        marginTop: 16,
+    metricsRow: {
+        flexDirection: 'row',
+        justifyContent: 'space-between',
+        marginBottom: 24,
+        gap: 12,
     },
-    sectionHeader: {
+    metricCard: {
+        flex: 1,
+        borderRadius: 20,
+        padding: 16,
+        shadowColor: '#000',
+        shadowOffset: { width: 0, height: 4 },
+        shadowOpacity: 0.08,
+        shadowRadius: 10,
+        elevation: 4,
+        alignItems: 'center',
+    },
+    iconCircle: {
+        width: 48,
+        height: 48,
+        borderRadius: 24,
+        justifyContent: 'center',
+        alignItems: 'center',
+        marginBottom: 10,
+        shadowColor: '#000',
+        shadowOffset: { width: 0, height: 4 },
+        shadowOpacity: 0.2,
+        shadowRadius: 6,
+        elevation: 4,
+    },
+    metricTextContainer: {
+        alignItems: 'center',
+    },
+    metricValue: {
+        fontSize: 24,
+        fontWeight: '800',
+        color: '#1F2937',
+        letterSpacing: -0.5,
+    },
+    metricLabel: {
+        fontSize: 10,
+        fontWeight: '700',
+        color: '#6B7280',
+        marginBottom: 2,
+        letterSpacing: 0.5,
+    },
+    sectionContainer: {
+        marginBottom: 24,
+    },
+    sectionMainTitle: {
+        fontSize: 14,
+        fontWeight: '900',
+        color: '#374151',
+        marginBottom: 12,
+        letterSpacing: 1,
+        textTransform: 'uppercase',
+    },
+    sectionHeaderRow: {
         flexDirection: 'row',
         alignItems: 'center',
         marginBottom: 12,
+        gap: 8,
     },
     sectionTitle: {
-        fontSize: 18,
-        fontWeight: 'bold',
-        color: colors.brownie,
-        marginLeft: 8,
+        fontSize: 13,
+        fontWeight: '800',
+        letterSpacing: 1,
+        textTransform: 'uppercase',
     },
-    alertItem: {
+    alertCardGlow: {
+        marginBottom: 12,
+        borderRadius: 16,
+        shadowColor: '#DC2626',
+        shadowOffset: { width: 0, height: 4 },
+        shadowOpacity: 0.15,
+        shadowRadius: 12,
+        elevation: 4,
+    },
+    alertCardInner: {
         flexDirection: 'row',
-        alignItems: 'flex-start',
-        backgroundColor: '#FFEBEE',
-        paddingHorizontal: 16,
-        paddingVertical: 12,
-        borderRadius: 8,
-        marginBottom: 8,
+        borderRadius: 16,
+        overflow: 'hidden',
+    },
+    alertIconBar: {
+        width: 6,
+        backgroundColor: '#DC2626',
     },
     alertContent: {
         flex: 1,
-        marginLeft: 12,
-    },
-    alertSlot: {
-        fontSize: 14,
-        fontWeight: '600',
-        color: colors.brownie,
-        marginBottom: 2,
-    },
-    alertMessage: {
-        fontSize: 13,
-        color: colors.gray,
-    },
-    recommendationBox: {
-        flexDirection: 'row',
-        backgroundColor: colors.cream,
-        marginHorizontal: 20,
-        marginTop: 16,
         padding: 16,
-        borderRadius: 12,
-        borderLeftWidth: 4,
-        borderLeftColor: colors.brownie,
     },
-    recommendationContent: {
-        flex: 1,
-        marginLeft: 12,
-    },
-    recommendationTitle: {
-        fontSize: 16,
-        fontWeight: '600',
-        color: colors.brownie,
-        marginBottom: 6,
-    },
-    recommendationText: {
-        fontSize: 14,
-        color: colors.brown,
-        lineHeight: 20,
-    },
-    recommendationsSection: {
-        paddingHorizontal: 20,
-        marginTop: 16,
-    },
-    recommendationCard: {
-        flexDirection: 'row',
-        alignItems: 'flex-start',
-        padding: 14,
-        borderRadius: 12,
-        marginBottom: 10,
-        borderLeftWidth: 4,
-        borderLeftColor: colors.brownie,
-    },
-    recommendationIcon: {
-        fontSize: 24,
-        marginRight: 12,
-        marginTop: 2,
-    },
-    recommendationTextContainer: {
-        flex: 1,
-    },
-    slotRecommendationTitle: {
+    alertSlotName: {
         fontSize: 15,
-        fontWeight: '700',
-        color: colors.brownie,
+        fontWeight: '800',
+        color: '#991B1B',
         marginBottom: 4,
     },
-    slotRecommendationText: {
+    alertMsg: {
         fontSize: 13,
-        color: colors.brown,
-        lineHeight: 18,
-        marginBottom: 6,
-    },
-    recommendationStats: {
-        marginTop: 2,
-    },
-    recommendationStat: {
-        fontSize: 11,
-        color: colors.gray,
+        color: '#4B5563',
         fontWeight: '500',
+        lineHeight: 18,
     },
-    slotsSection: {
-        paddingHorizontal: 20,
-        marginTop: 20,
+    insightCard: {
+        flexDirection: 'row',
+        backgroundColor: '#FFFFFF',
+        borderRadius: 14,
+        marginBottom: 10,
+        overflow: 'hidden',
+        shadowColor: '#000',
+        shadowOffset: { width: 0, height: 2 },
+        shadowOpacity: 0.05,
+        shadowRadius: 4,
+        elevation: 2,
+    },
+    insightAccent: {
+        width: 6,
+    },
+    insightContent: {
+        flex: 1,
+        padding: 14,
+    },
+    insightSlot: {
+        fontSize: 14,
+        fontWeight: '700',
+        color: '#1F2937',
+        marginBottom: 2,
+    },
+    insightText: {
+        fontSize: 13,
+        color: '#4B5563',
+    },
+    slotCardAdvanced: {
+        borderRadius: 20,
+        marginBottom: 16,
+        shadowColor: '#000',
+        shadowOffset: { width: 0, height: 4 },
+        shadowOpacity: 0.08,
+        shadowRadius: 10,
+        elevation: 3,
+        backgroundColor: '#fff',
+    },
+    slotCardGradient: {
+        borderRadius: 20,
+        padding: 18,
+        borderWidth: 1,
+        borderColor: '#F3F4F6',
+    },
+    slotHeader: {
+        flexDirection: 'row',
+        justifyContent: 'space-between',
+        alignItems: 'center',
+        marginBottom: 14,
+    },
+    slotNameLarge: {
+        fontSize: 18,
+        fontWeight: '800',
+        color: '#111827',
+    },
+    capacityBadge: {
+        flexDirection: 'row',
+        alignItems: 'center',
+        backgroundColor: '#F3F4F6',
+        paddingHorizontal: 10,
+        paddingVertical: 5,
+        borderRadius: 12,
+        gap: 4,
+    },
+    capacityText: {
+        fontSize: 12,
+        fontWeight: '700',
+        color: '#4B5563',
+    },
+    statsGrid: {
+        flexDirection: 'row',
+        marginTop: 16,
+        paddingTop: 16,
+        borderTopWidth: 1,
+        borderTopColor: '#F3F4F6',
+    },
+    statBox: {
+        flex: 1,
+        alignItems: 'center',
+    },
+    verticalDivider: {
+        width: 1,
+        backgroundColor: '#E5E7EB',
+    },
+    statLabel: {
+        fontSize: 10,
+        fontWeight: '700',
+        color: '#9CA3AF',
+        letterSpacing: 0.5,
+        marginBottom: 2,
+    },
+    statValue: {
+        fontSize: 16,
+        fontWeight: '800',
+        color: '#111827',
     },
     emptyContainer: {
         padding: 40,
         alignItems: 'center',
+        backgroundColor: 'rgba(255,255,255,0.5)',
+        borderRadius: 20,
+        borderWidth: 1,
+        borderColor: '#E5E7EB',
+        borderStyle: 'dashed',
     },
     emptyText: {
-        fontSize: 14,
-        color: colors.gray,
-    },
-    slotMetrics: {
-        flexDirection: 'row',
-        justifyContent: 'space-around',
-        backgroundColor: colors.white,
-        marginTop: -6,
-        marginBottom: 12,
-        padding: 12,
-        borderBottomLeftRadius: 12,
-        borderBottomRightRadius: 12,
-        shadowColor: '#000',
-        shadowOffset: { width: 0, height: 2 },
-        shadowOpacity: 0.05,
-        shadowRadius: 2,
-        elevation: 2,
-    },
-    metricItem: {
-        alignItems: 'center',
-    },
-    metricLabel: {
-        fontSize: 11,
-        color: colors.gray,
-        marginBottom: 2,
-    },
-    metricValue: {
-        fontSize: 14,
+        color: '#9CA3AF',
         fontWeight: '600',
-        color: colors.brownie,
+    },
+    inactiveCard: {
+        backgroundColor: '#F3F4F6',
+        opacity: 0.8,
+        borderWidth: 1,
+        borderColor: '#E5E7EB',
+    },
+    inactiveText: {
+        color: '#9CA3AF',
+    },
+    inactiveBadge: {
+        backgroundColor: '#E5E7EB',
+        paddingHorizontal: 10,
+        paddingVertical: 5,
+        borderRadius: 12,
+    },
+    inactiveBadgeText: {
+        color: '#6B7280',
+        fontSize: 10,
+        fontWeight: '700',
+        letterSpacing: 0.5,
+    },
+    statValueInactive: {
+        fontSize: 16,
+        fontWeight: '800',
+        color: '#9CA3AF',
     },
 });
 
