@@ -38,7 +38,6 @@ AI/ML forecasting supports preparation planning to reduce waste, balance resourc
 - **Register and manage staff accounts** - Control staff access and permissions
 - **Manage menu items** - Add, update, and remove menu items with pricing and availability
 - **View crowd analysis** - Access peak hours, occupancy summary, and system alerts
-- **Export reports in CSV format** - Generate downloadable reports for analysis
 - **Dashboard statistics** - Monitor active tokens, served orders, revenue, cancelled bookings, and user counts
 
 ## Key Features
@@ -60,14 +59,13 @@ AI/ML forecasting supports preparation planning to reduce waste, balance resourc
 - **Alert System** - Automated notifications for staff during peak loads
 - **Analytics Dashboard** - Comprehensive statistics including revenue tracking and user metrics
 - **Historical Data Visualization** - 7-day crowd pattern charts with hourly breakdowns
-- **CSV Export** - Download reports for offline analysis
 
 ### Sustainability & Fairness Focus
 
-- **Reduces unnecessary food preparation and wastage** - Demand forecasting enables accurate preparation planning
-- **Ensures fair serving order and transparent allocation** - Token-based system prevents queue jumping
-- **Supports balanced resource usage during peak hours** - Staff recommendations optimize service delivery
-- **Promotes ethical food service operations** - Data-driven decisions reduce environmental impact
+- **Reduces unnecessary food preparation and wastage** - Demand forecasting enables accurate preparation planning (in the upcoming sprints)
+- **Ensures fair serving order and transparent allocation** - Token-based system prevents queue jumping (in the upcoming sprints)
+- **Supports balanced resource usage during peak hours** - Staff recommendations optimize service delivery (in the upcoming sprints)
+- **Promotes ethical food service operations** - Data-driven decisions reduce environmental impact (in the upcoming sprints)
 
 ## Tech Stack
 
@@ -343,6 +341,7 @@ The backend server will run on `http://localhost:5000`
 - **Improved crowd and waiting time prediction** - Enhanced algorithms using weather and academic calendar data
 - **Integration with weather APIs** - Factor weather conditions into demand forecasting
 - **Academic schedule integration** - Adjust predictions based on exam periods and class schedules
+- **Sustaiability Reports** - Sustainability reports with waste tracking and Demand based food preparation
 
 ## Contributing
 
