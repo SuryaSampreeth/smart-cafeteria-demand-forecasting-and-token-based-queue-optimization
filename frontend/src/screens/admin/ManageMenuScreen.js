@@ -9,13 +9,60 @@ import {
     Alert,
     RefreshControl,
     ActivityIndicator,
+    Platform,
+    StatusBar,
+    Image,
+    KeyboardAvoidingView
 } from 'react-native';
+import { LinearGradient } from 'expo-linear-gradient';
+import { MaterialCommunityIcons } from '@expo/vector-icons';
 import Card from '../../components/common/Card';
 import Button from '../../components/common/Button';
 import ErrorMessage from '../../components/common/ErrorMessage';
 import { menuAPI } from '../../services/api';
 import { colors } from '../../styles/colors';
 import { typography } from '../../styles/typography';
+
+// Local Image Mapping
+const localImages = {
+    'biryani': require('../../../assets/images/food/biryani.jpg'),
+    'chicken curry': require('../../../assets/images/food/chicken_curry.jpg'),
+    'coffee': require('../../../assets/images/food/coffee.jpg'),
+    'dal': require('../../../assets/images/food/dal.jpg'),
+    'dosa': require('../../../assets/images/food/dosa.jpg'),
+    'gulab jamun': require('../../../assets/images/food/gulab_jamun.jpg'),
+    'ice cream': require('../../../assets/images/food/ice_cream.jpg'),
+    'idli': require('../../../assets/images/food/idli.jpg'),
+    'pakora': require('../../../assets/images/food/pakora.jpg'),
+    'pancake': require('../../../assets/images/food/pancake.jpg'),
+    'paneer curry': require('../../../assets/images/food/paneer_curry.jpg'),
+    'poha': require('../../../assets/images/food/poha.jpg'),
+    'rice': require('../../../assets/images/food/rice.jpg'),
+    'roti': require('../../../assets/images/food/roti.jpg'),
+    'samosa': require('../../../assets/images/food/samosa.jpg'),
+    'sandwich': require('../../../assets/images/food/sandwich.jpg'),
+    'tea': require('../../../assets/images/food/tea.jpg'),
+    'veg biryani': require('../../../assets/images/food/veg_biryani.jpg'),
+};
+
+const getMenuImage = (itemName, remoteUrl) => {
+    if (!itemName) return null;
+    const normalizedName = itemName.toLowerCase();
+
+    // 1. Try exact local match
+    if (localImages[normalizedName]) return localImages[normalizedName];
+
+    // 2. Try partial local match (e.g., "Masala Dosa" -> matches "dosa")
+    for (const key in localImages) {
+        if (normalizedName.includes(key)) return localImages[key];
+    }
+
+    // 3. Use remote URL if valid
+    if (remoteUrl && remoteUrl.startsWith('http')) return { uri: remoteUrl };
+
+    // 4. Fallback placeholder
+    return { uri: `https://ui-avatars.com/api/?name=${itemName.replace(' ', '+')}&background=random` };
+};
 
 /*
  * ManageMenuScreen
@@ -223,174 +270,260 @@ const ManageMenuScreen = () => {
     if (loading) {
         return (
             <View style={styles.loadingContainer}>
-                <ActivityIndicator size="large" color={colors.brownie} />
+                <ActivityIndicator size="large" color="#5E3023" />
+                <Text style={styles.loadingText}>Loading Menu...</Text>
             </View>
         );
     }
 
     return (
         <View style={styles.container}>
+            <StatusBar barStyle="light-content" />
+
+            {/* 1. Custom Gradient Header */}
+            <LinearGradient
+                colors={['#2D1B16', '#5E3023']}
+                start={{ x: 0, y: 0 }}
+                end={{ x: 1, y: 1 }}
+                style={styles.headerGradient}
+            >
+                <View style={styles.headerContent}>
+                    <View>
+                        <Text style={styles.headerTitle}>MENU MANAGEMENT</Text>
+                        <Text style={styles.headerSubtitle}>Curate Daily Offerings</Text>
+                    </View>
+                    <View style={styles.headerIconContainer}>
+                        <MaterialCommunityIcons name="food-variant" size={28} color="#FFF" />
+                    </View>
+                </View>
+            </LinearGradient>
+
             <ScrollView
                 style={styles.content}
+                contentContainerStyle={{ paddingBottom: 40 }}
                 refreshControl={
-                    <RefreshControl refreshing={refreshing} onRefresh={onRefresh} colors={[colors.brownie]} />
+                    <RefreshControl refreshing={refreshing} onRefresh={onRefresh} tintColor="#5E3023" />
                 }
+                showsVerticalScrollIndicator={false}
             >
-                <Text style={styles.title}>Manage Menu</Text>
-
-                {/* Form Toggle Button */}
-                <Button
-                    title={showForm ? 'Cancel' : '+ Add New Menu Item'}
-                    onPress={() => {
-                        setShowForm(!showForm);
-                        setError('');
-                        setFormData({
-                            name: '',
-                            description: '',
-                            category: 'veg',
-                            price: '',
-                            imageUrl: '',
-                        });
-                        setSelectedSlots([]);
-                    }}
-                    variant={showForm ? 'outline' : 'primary'}
-                    style={styles.toggleButton}
-                />
-
-                {/* Add Item Form */}
-                {showForm && (
-                    <Card style={styles.formCard}>
-                        <Text style={styles.formTitle}>Add Menu Item</Text>
-
-                        <ErrorMessage message={error} />
-
-                        <Text style={styles.label}>Item Name *</Text>
-                        <TextInput
-                            style={styles.input}
-                            placeholder="e.g., Masala Dosa"
-                            value={formData.name}
-                            onChangeText={(text) => setFormData({ ...formData, name: text })}
-                            autoCapitalize="words"
-                        />
-
-                        <Text style={styles.label}>Description *</Text>
-                        <TextInput
-                            style={styles.input}
-                            placeholder="Brief description"
-                            value={formData.description}
-                            onChangeText={(text) => setFormData({ ...formData, description: text })}
-                            multiline
-                            numberOfLines={2}
-                        />
-
-                        <Text style={styles.label}>Category *</Text>
-                        <View style={styles.categoryContainer}>
-                            {['veg', 'non-veg', 'beverage', 'dessert'].map((cat) => (
-                                <TouchableOpacity
-                                    key={cat}
-                                    style={[
-                                        styles.categoryButton,
-                                        formData.category === cat && styles.categoryButtonActive,
-                                    ]}
-                                    onPress={() => setFormData({ ...formData, category: cat })}
-                                >
-                                    <Text
-                                        style={[
-                                            styles.categoryButtonText,
-                                            formData.category === cat && styles.categoryButtonTextActive,
-                                        ]}
-                                    >
-                                        {cat.charAt(0).toUpperCase() + cat.slice(1)}
-                                    </Text>
-                                </TouchableOpacity>
-                            ))}
-                        </View>
-
-                        <Text style={styles.label}>Price (₹) *</Text>
-                        <TextInput
-                            style={styles.input}
-                            placeholder="e.g., 50"
-                            value={formData.price}
-                            onChangeText={(text) => setFormData({ ...formData, price: text })}
-                            keyboardType="numeric"
-                        />
-
-                        <Text style={styles.label}>Image URL (Optional)</Text>
-                        <TextInput
-                            style={styles.input}
-                            placeholder="https://example.com/image.jpg"
-                            value={formData.imageUrl}
-                            onChangeText={(text) => setFormData({ ...formData, imageUrl: text })}
-                            autoCapitalize="none"
-                            autoCorrect={false}
-                        />
-
-                        <Text style={styles.label}>Available in Slots *</Text>
-                        <View style={styles.slotsContainer}>
-                            {slots.map((slot) => (
-                                <TouchableOpacity
-                                    key={slot._id}
-                                    style={styles.slotCheckbox}
-                                    onPress={() => toggleSlotSelection(slot._id)}
-                                >
-                                    <View style={[
-                                        styles.checkbox,
-                                        selectedSlots.includes(slot._id) && styles.checkboxChecked
-                                    ]}>
-                                        {selectedSlots.includes(slot._id) && (
-                                            <Text style={styles.checkmark}>✓</Text>
-                                        )}
-                                    </View>
-                                    <Text style={styles.slotLabel}>{slot.name}</Text>
-                                </TouchableOpacity>
-                            ))}
-                        </View>
-
-                        <Button
-                            title="Add Menu Item"
-                            onPress={handleAddItem}
-                            loading={submitting}
-                            style={styles.submitButton}
-                        />
-                    </Card>
+                {/* 2. Action Bar / Add Button */}
+                {!showForm && (
+                    <TouchableOpacity
+                        style={styles.addButton}
+                        activeOpacity={0.8}
+                        onPress={() => {
+                            setShowForm(true);
+                            setError('');
+                            setFormData({
+                                name: '',
+                                description: '',
+                                category: 'veg',
+                                price: '',
+                                imageUrl: '',
+                            });
+                            setSelectedSlots([]);
+                        }}
+                    >
+                        <LinearGradient
+                            colors={['#5E3023', '#8B5E3C']}
+                            start={{ x: 0, y: 0 }}
+                            end={{ x: 1, y: 0 }}
+                            style={styles.addButtonGradient}
+                        >
+                            <MaterialCommunityIcons name="plus-circle-outline" size={24} color="#FFF" />
+                            <Text style={styles.addButtonText}>Add New Menu Item</Text>
+                        </LinearGradient>
+                    </TouchableOpacity>
                 )}
 
-                {/* List of Menu Items */}
-                <Text style={styles.sectionTitle}>Menu Items ({menuItems.length})</Text>
-
-                {menuItems.length > 0 ? (
-                    menuItems.map((item) => (
-                        <Card key={item._id} style={styles.menuCard}>
-                            <View style={styles.menuInfo}>
-                                <View style={styles.menuDetails}>
-                                    <Text style={styles.menuName}>{item.name}</Text>
-                                    <Text style={styles.menuDescription}>{item.description}</Text>
-                                    <View style={styles.menuMeta}>
-                                        <View
-                                            style={[
-                                                styles.categoryBadge,
-                                                { backgroundColor: getCategoryColor(item.category) },
-                                            ]}
-                                        >
-                                            <Text style={styles.categoryBadgeText}>{item.category}</Text>
-                                        </View>
-                                        <Text style={styles.menuPrice}>₹{item.price}</Text>
-                                    </View>
-                                </View>
-                                <TouchableOpacity
-                                    style={styles.deleteButton}
-                                    onPress={() => handleDelete(item._id, item.name)}
-                                >
-                                    <Text style={styles.deleteButtonText}>Delete</Text>
+                {/* 3. Add Item Form Card */}
+                {showForm && (
+                    <View style={styles.formContainer}>
+                        <LinearGradient colors={['#FFFFFF', '#FDFBF7']} style={styles.formGradient}>
+                            <View style={styles.formHeader}>
+                                <Text style={styles.formTitle}>New Menu Item</Text>
+                                <TouchableOpacity onPress={() => setShowForm(false)} style={styles.closeButton}>
+                                    <MaterialCommunityIcons name="close" size={20} color="#6B7280" />
                                 </TouchableOpacity>
                             </View>
-                        </Card>
-                    ))
-                ) : (
-                    <Card>
-                        <Text style={styles.noDataText}>No menu items available</Text>
-                    </Card>
+
+                            <ErrorMessage message={error} />
+
+                            {/* Name & Price Row */}
+                            <View style={styles.row}>
+                                <View style={[styles.inputGroup, { flex: 2, marginRight: 12 }]}>
+                                    <Text style={styles.label}>Item Name</Text>
+                                    <View style={styles.inputWrapper}>
+                                        <MaterialCommunityIcons name="food" size={20} color="#9CA3AF" style={styles.inputIcon} />
+                                        <TextInput
+                                            style={styles.input}
+                                            placeholder="e.g. Masala Dosa"
+                                            value={formData.name}
+                                            onChangeText={(text) => setFormData({ ...formData, name: text })}
+                                            autoCapitalize="words"
+                                        />
+                                    </View>
+                                </View>
+                                <View style={[styles.inputGroup, { flex: 1 }]}>
+                                    <Text style={styles.label}>Price (₹)</Text>
+                                    <View style={styles.inputWrapper}>
+                                        <Text style={styles.currencySymbol}>₹</Text>
+                                        <TextInput
+                                            style={styles.input}
+                                            placeholder="50"
+                                            value={formData.price}
+                                            onChangeText={(text) => setFormData({ ...formData, price: text })}
+                                            keyboardType="numeric"
+                                        />
+                                    </View>
+                                </View>
+                            </View>
+
+                            <View style={styles.inputGroup}>
+                                <Text style={styles.label}>Description</Text>
+                                <View style={[styles.inputWrapper, { height: 80, alignItems: 'flex-start' }]}>
+                                    <TextInput
+                                        style={[styles.input, { height: '100%', textAlignVertical: 'top', paddingTop: 8 }]}
+                                        placeholder="Brief description of the item..."
+                                        value={formData.description}
+                                        onChangeText={(text) => setFormData({ ...formData, description: text })}
+                                        multiline
+                                        numberOfLines={3}
+                                    />
+                                </View>
+                            </View>
+
+                            <Text style={styles.label}>Category</Text>
+                            <View style={styles.categoryContainer}>
+                                {['veg', 'non-veg', 'beverage', 'dessert'].map((cat) => (
+                                    <TouchableOpacity
+                                        key={cat}
+                                        style={[
+                                            styles.categoryPill,
+                                            formData.category === cat && styles.categoryPillActive,
+                                            { borderColor: getCategoryColor(cat) }
+                                        ]}
+                                        onPress={() => setFormData({ ...formData, category: cat })}
+                                    >
+                                        <MaterialCommunityIcons
+                                            name={cat === 'veg' ? 'leaf' : cat === 'non-veg' ? 'food-drumstick' : cat === 'beverage' ? 'cup' : 'cake'}
+                                            size={16}
+                                            color={formData.category === cat ? '#FFF' : getCategoryColor(cat)}
+                                            style={{ marginRight: 6 }}
+                                        />
+                                        <Text
+                                            style={[
+                                                styles.categoryPillText,
+                                                { color: formData.category === cat ? '#FFF' : getCategoryColor(cat) }
+                                            ]}
+                                        >
+                                            {cat.charAt(0).toUpperCase() + cat.slice(1)}
+                                        </Text>
+                                    </TouchableOpacity>
+                                ))}
+                            </View>
+
+                            <Text style={styles.label}>Available Slots</Text>
+                            <View style={styles.slotsContainer}>
+                                {slots.map((slot) => (
+                                    <TouchableOpacity
+                                        key={slot._id}
+                                        style={[
+                                            styles.slotChip,
+                                            selectedSlots.includes(slot._id) && styles.slotChipActive
+                                        ]}
+                                        onPress={() => toggleSlotSelection(slot._id)}
+                                    >
+                                        <Text style={[
+                                            styles.slotChipText,
+                                            selectedSlots.includes(slot._id) && styles.slotChipTextActive
+                                        ]}>{slot.name}</Text>
+                                        {selectedSlots.includes(slot._id) && (
+                                            <MaterialCommunityIcons name="check-circle" size={16} color="#FFF" style={{ marginLeft: 6 }} />
+                                        )}
+                                    </TouchableOpacity>
+                                ))}
+                            </View>
+
+                            <Button
+                                title="Save to Menu"
+                                onPress={handleAddItem}
+                                loading={submitting}
+                                style={styles.submitButton}
+                            />
+                        </LinearGradient>
+                    </View>
                 )}
+
+                {/* 4. Menu Items List */}
+                <View style={styles.listHeader}>
+                    <Text style={styles.sectionTitle}>CURRENT OFFERS</Text>
+                    <View style={styles.badge}>
+                        <Text style={styles.badgeText}>{menuItems.length}</Text>
+                    </View>
+                </View>
+
+                {menuItems.length > 0 ? (
+                    <View style={styles.gridContainer}>
+                        {menuItems.map((item) => (
+                            <View key={item._id} style={[styles.menuCard, { borderLeftColor: getCategoryColor(item.category) }]}>
+                                <LinearGradient
+                                    colors={['#FFFFFF', '#FAF9F6']}
+                                    style={styles.cardGradient}
+                                >
+                                    <View style={styles.menuCardHeader}>
+                                        <Image
+                                            source={getMenuImage(item.name, item.imageUrl)}
+                                            style={styles.menuImage}
+                                        />
+                                        <View style={styles.menuTextContainer}>
+                                            <Text style={styles.menuName}>{item.name}</Text>
+                                            <Text style={styles.menuDescription} numberOfLines={2}>{item.description}</Text>
+                                        </View>
+                                        <View style={[styles.priceBadge, { backgroundColor: getCategoryColor(item.category) + '15' }]}>
+                                            <Text style={[styles.priceText, { color: getCategoryColor(item.category) }]}>₹{item.price}</Text>
+                                        </View>
+                                    </View>
+
+                                    <View style={styles.menuCardFooter}>
+                                        <View style={[styles.categoryTag, { backgroundColor: getCategoryColor(item.category) + '10' }]}>
+                                            <MaterialCommunityIcons
+                                                name={item.category === 'veg' ? 'leaf' : item.category === 'non-veg' ? 'food-drumstick' : item.category === 'beverage' ? 'cup' : 'cake'}
+                                                size={14}
+                                                color={getCategoryColor(item.category)}
+                                                style={{ marginRight: 4 }}
+                                            />
+                                            <Text style={[styles.categoryTagText, { color: getCategoryColor(item.category) }]}>{item.category.toUpperCase()}</Text>
+                                        </View>
+                                        <TouchableOpacity
+                                            style={styles.deleteAction}
+                                            onPress={() => handleDelete(item._id, item.name)}
+                                        >
+                                            <MaterialCommunityIcons name="trash-can-outline" size={18} color="#EF4444" />
+                                        </TouchableOpacity>
+                                    </View>
+                                </LinearGradient>
+                            </View>
+                        ))}
+                    </View>
+                ) : (
+                    <View style={styles.emptyState}>
+                        <MaterialCommunityIcons name="food-off" size={48} color="#D1D5DB" />
+                        <Text style={styles.emptyStateText}>Menu is empty.</Text>
+                        <Text style={styles.emptyStateSubtext}>Start adding delicious items!</Text>
+                    </View>
+                )}
+
+                {/* Decorative Footer */}
+                <View style={styles.decorativeFooter}>
+                    <View style={styles.decorativeIcons}>
+                        <MaterialCommunityIcons name="silverware-spoon" size={60} color="rgba(94, 48, 35, 0.1)" />
+                        <MaterialCommunityIcons name="chef-hat" size={100} color="rgba(94, 48, 35, 0.15)" style={{ marginHorizontal: -20, marginTop: -30 }} />
+                        <MaterialCommunityIcons name="food-croissant" size={60} color="rgba(94, 48, 35, 0.1)" />
+                    </View>
+                    <Text style={styles.decorativeText}>Culinary Excellence</Text>
+                    <Text style={styles.decorativeSubtext}>Curating the best for our community</Text>
+                </View>
             </ScrollView>
         </View>
     );
@@ -399,172 +532,356 @@ const ManageMenuScreen = () => {
 const styles = StyleSheet.create({
     container: {
         flex: 1,
-        backgroundColor: colors.background,
-    },
-    content: {
-        flex: 1,
-        padding: 16,
+        backgroundColor: '#F3F4F6',
     },
     loadingContainer: {
         flex: 1,
         justifyContent: 'center',
         alignItems: 'center',
-        backgroundColor: colors.background,
     },
-    title: {
-        ...typography.h2,
-        color: colors.brownie,
-        marginBottom: 16,
+    loadingText: {
+        marginTop: 12,
+        color: '#6B7280',
+        fontWeight: '600',
     },
-    toggleButton: {
-        marginBottom: 16,
+    headerGradient: {
+        paddingTop: Platform.OS === 'ios' ? 40 : 20,
+        paddingBottom: 24,
+        paddingHorizontal: 20,
+        // Flat modern look
+        shadowColor: '#5E3023',
+        shadowOffset: { width: 0, height: 4 },
+        shadowOpacity: 0.15,
+        shadowRadius: 12,
+        elevation: 6,
     },
-    formCard: {
+    headerContent: {
+        flexDirection: 'row',
+        justifyContent: 'space-between',
+        alignItems: 'center',
+        marginTop: 10,
+    },
+    headerTitle: {
+        fontSize: 12,
+        fontWeight: '900',
+        color: 'rgba(255,255,255,0.7)',
+        letterSpacing: 1.5,
+        marginBottom: 4,
+    },
+    headerSubtitle: {
+        fontSize: 24,
+        fontWeight: '800',
+        color: '#FFFFFF',
+        letterSpacing: 0.5,
+    },
+    headerIconContainer: {
+        backgroundColor: 'rgba(255,255,255,0.15)',
+        padding: 10,
+        borderRadius: 12,
+    },
+    content: {
+        flex: 1,
+        paddingTop: 0,
+    },
+    addButton: {
+        marginHorizontal: 16,
+        marginTop: 20,
+        marginBottom: 20,
+        shadowColor: '#5E3023',
+        shadowOffset: { width: 0, height: 8 },
+        shadowOpacity: 0.2,
+        shadowRadius: 12,
+        elevation: 8,
+        borderRadius: 16,
+    },
+    addButtonGradient: {
+        flexDirection: 'row',
+        alignItems: 'center',
+        justifyContent: 'center',
+        paddingVertical: 16,
+        borderRadius: 16,
+    },
+    addButtonText: {
+        color: '#FFFFFF',
+        fontSize: 16,
+        fontWeight: '700',
+        marginLeft: 10,
+    },
+    formContainer: {
+        backgroundColor: '#FFFFFF',
+        marginHorizontal: 16,
+        marginTop: 20,
+        borderRadius: 20,
+        marginBottom: 24,
+        shadowColor: '#000',
+        shadowOffset: { width: 0, height: 4 },
+        shadowOpacity: 0.1,
+        shadowRadius: 12,
+        elevation: 5,
+        borderTopWidth: 6,
+        borderTopColor: '#5E3023', // Strong top accent
+        overflow: 'hidden', // Contain the gradient
+    },
+    formGradient: {
+        padding: 20,
+    },
+    formHeader: {
+        flexDirection: 'row',
+        justifyContent: 'space-between',
+        alignItems: 'center',
         marginBottom: 20,
     },
     formTitle: {
-        ...typography.h3,
-        color: colors.brownie,
+        fontSize: 18,
+        fontWeight: '800',
+        color: '#1F2937',
+    },
+    closeButton: {
+        padding: 4,
+        backgroundColor: '#F3F4F6',
+        borderRadius: 20,
+    },
+    row: {
+        flexDirection: 'row',
+        justifyContent: 'space-between',
+    },
+    inputGroup: {
         marginBottom: 16,
     },
     label: {
-        ...typography.body,
-        color: colors.brownie,
-        marginBottom: 8,
+        fontSize: 13,
+        fontWeight: '700',
+        color: '#4B5563',
+        marginBottom: 6,
+        marginLeft: 4,
+    },
+    inputWrapper: {
+        flexDirection: 'row',
+        alignItems: 'center',
+        backgroundColor: '#F9FAFB',
+        borderWidth: 1,
+        borderColor: '#E5E7EB',
+        borderRadius: 12,
+        paddingHorizontal: 12,
+    },
+    inputIcon: {
+        marginRight: 10,
+    },
+    currencySymbol: {
+        fontSize: 16,
         fontWeight: '600',
+        color: '#9CA3AF',
+        marginRight: 4,
     },
     input: {
-        backgroundColor: colors.white,
-        borderWidth: 1,
-        borderColor: colors.brownieLight,
-        borderRadius: 8,
-        padding: 12,
-        fontSize: 16,
-        marginBottom: 16,
+        flex: 1,
+        paddingVertical: 12,
+        fontSize: 15,
+        color: '#1F2937',
     },
     categoryContainer: {
         flexDirection: 'row',
         flexWrap: 'wrap',
         marginBottom: 16,
     },
-    categoryButton: {
-        paddingHorizontal: 16,
+    categoryPill: {
+        flexDirection: 'row',
+        alignItems: 'center',
+        paddingHorizontal: 14,
         paddingVertical: 8,
         borderRadius: 20,
+        borderWidth: 1.5,
+        marginRight: 8,
+        marginBottom: 8,
+        backgroundColor: '#FFFFFF',
+    },
+    categoryPillActive: {
+        backgroundColor: '#5E3023', // Will be overridden dynamically
+    },
+    categoryPillText: {
+        fontSize: 12,
+        fontWeight: '700',
+    },
+    slotsContainer: {
+        flexDirection: 'row',
+        flexWrap: 'wrap',
+        marginBottom: 20,
+    },
+    slotChip: {
+        flexDirection: 'row',
+        alignItems: 'center',
+        paddingHorizontal: 14,
+        paddingVertical: 8,
+        borderRadius: 12,
+        backgroundColor: '#F3F4F6',
         borderWidth: 1,
-        borderColor: colors.brownieLight,
+        borderColor: 'transparent',
         marginRight: 8,
         marginBottom: 8,
     },
-    categoryButtonActive: {
-        backgroundColor: colors.brownie,
-        borderColor: colors.brownie,
+    slotChipActive: {
+        backgroundColor: '#5E3023',
+        borderColor: '#5E3023',
     },
-    categoryButtonText: {
-        ...typography.caption,
-        color: colors.brownie,
+    slotChipText: {
+        fontSize: 13,
+        fontWeight: '600',
+        color: '#4B5563',
     },
-    categoryButtonTextActive: {
-        color: colors.cream,
+    slotChipTextActive: {
+        color: '#FFFFFF',
     },
     submitButton: {
         marginTop: 8,
+        borderRadius: 12,
+    },
+    listHeader: {
+        flexDirection: 'row',
+        alignItems: 'center',
+        paddingHorizontal: 20,
+        marginBottom: 16,
     },
     sectionTitle: {
-        ...typography.h3,
-        color: colors.brownie,
-        marginBottom: 12,
+        fontSize: 13,
+        fontWeight: '900',
+        color: '#9CA3AF',
+        letterSpacing: 1,
+        marginRight: 10,
+    },
+    badge: {
+        backgroundColor: '#E5E7EB',
+        paddingHorizontal: 8,
+        paddingVertical: 2,
+        borderRadius: 10,
+    },
+    badgeText: {
+        fontSize: 12,
+        fontWeight: '700',
+        color: '#4B5563',
+    },
+    gridContainer: {
+        paddingHorizontal: 16,
+        gap: 12,
     },
     menuCard: {
+        backgroundColor: '#FFFFFF',
+        borderRadius: 16,
+        shadowColor: '#000',
+        shadowOffset: { width: 0, height: 4 },
+        shadowOpacity: 0.1,
+        shadowRadius: 8,
+        elevation: 4,
+        marginBottom: 16,
+        borderLeftWidth: 6, // Thick colored accent
+        overflow: 'hidden', // Contain the gradient
+    },
+    cardGradient: {
+        padding: 16,
+    },
+    menuCardHeader: {
+        flexDirection: 'row',
+        alignItems: 'center', // Align center vertically because image height
         marginBottom: 12,
     },
-    menuInfo: {
-        flexDirection: 'row',
-        justifyContent: 'space-between',
-        alignItems: 'flex-start',
+    menuImage: {
+        width: 60,
+        height: 60,
+        borderRadius: 12,
+        marginRight: 12,
+        backgroundColor: '#F3F4F6',
     },
-    menuDetails: {
+    menuTextContainer: {
         flex: 1,
+        marginRight: 12,
     },
     menuName: {
-        ...typography.body,
-        color: colors.brownie,
-        fontWeight: '600',
+        fontSize: 17,
+        fontWeight: '800',
+        color: '#1F2937',
         marginBottom: 4,
     },
     menuDescription: {
-        ...typography.caption,
-        color: colors.gray,
-        marginBottom: 8,
+        fontSize: 13,
+        color: '#6B7280',
+        lineHeight: 18,
     },
-    menuMeta: {
-        flexDirection: 'row',
-        alignItems: 'center',
-    },
-    categoryBadge: {
-        paddingHorizontal: 10,
-        paddingVertical: 4,
-        borderRadius: 12,
-        marginRight: 12,
-    },
-    categoryBadgeText: {
-        ...typography.small,
-        color: colors.white,
-        fontWeight: '600',
-    },
-    menuPrice: {
-        ...typography.body,
-        color: colors.brownie,
-        fontWeight: 'bold',
-    },
-    deleteButton: {
-        backgroundColor: colors.error,
+    priceBadge: {
         paddingHorizontal: 12,
         paddingVertical: 6,
-        borderRadius: 8,
-        marginLeft: 8,
+        borderRadius: 12,
+        alignSelf: 'flex-start',
     },
-    deleteButtonText: {
-        color: colors.white,
-        ...typography.caption,
-        fontWeight: '600',
+    priceText: {
+        fontSize: 14,
+        fontWeight: '800',
     },
-    slotsContainer: {
-        marginBottom: 16,
+    menuCardFooter: {
+        flexDirection: 'row',
+        justifyContent: 'space-between',
+        alignItems: 'center',
+        marginTop: 12,
+        paddingTop: 12,
+        borderTopWidth: 1,
+        borderTopColor: 'rgba(0,0,0,0.05)',
     },
-    slotCheckbox: {
+    categoryTag: {
         flexDirection: 'row',
         alignItems: 'center',
-        marginBottom: 12,
+        paddingHorizontal: 10,
+        paddingVertical: 4,
+        borderRadius: 8,
+        backgroundColor: '#F3F4F6',
     },
-    checkbox: {
-        width: 24,
-        height: 24,
-        borderWidth: 2,
-        borderColor: colors.brownieLight,
-        borderRadius: 4,
-        marginRight: 12,
+    categoryTagText: {
+        fontSize: 11,
+        fontWeight: '800',
+        letterSpacing: 0.5,
+    },
+    deleteAction: {
+        padding: 6,
+        backgroundColor: '#FEF2F2',
+        borderRadius: 8,
+    },
+    emptyState: {
+        alignItems: 'center',
+        paddingVertical: 40,
+        paddingHorizontal: 20,
+    },
+    emptyStateText: {
+        fontSize: 16,
+        fontWeight: '700',
+        color: '#374151',
+        marginTop: 16,
+    },
+    emptyStateSubtext: {
+        fontSize: 14,
+        color: '#6B7280',
+        textAlign: 'center',
+        marginTop: 4,
+    },
+    decorativeFooter: {
+        alignItems: 'center',
+        marginTop: 40,
+        marginBottom: 20,
+        opacity: 0.8,
+    },
+    decorativeIcons: {
+        flexDirection: 'row',
         alignItems: 'center',
         justifyContent: 'center',
-        backgroundColor: colors.white,
+        marginBottom: 16,
     },
-    checkboxChecked: {
-        backgroundColor: colors.brownie,
-        borderColor: colors.brownie,
+    decorativeText: {
+        fontSize: 14,
+        fontWeight: '700',
+        color: 'rgba(94, 48, 35, 0.3)',
+        letterSpacing: 1,
+        textTransform: 'uppercase',
     },
-    checkmark: {
-        color: colors.white,
-        fontSize: 16,
-        fontWeight: 'bold',
-    },
-    slotLabel: {
-        ...typography.body,
-        color: colors.brownie,
-    },
-    noDataText: {
-        ...typography.body,
-        color: colors.gray,
-        textAlign: 'center',
+    decorativeSubtext: {
+        fontSize: 12,
+        color: 'rgba(94, 48, 35, 0.2)',
+        marginTop: 4,
         fontStyle: 'italic',
     },
 });

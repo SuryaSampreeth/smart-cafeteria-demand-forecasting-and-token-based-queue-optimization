@@ -9,7 +9,13 @@ import {
     Alert,
     RefreshControl,
     ActivityIndicator,
+    Platform,
+    StatusBar,
+    Image,
+    KeyboardAvoidingView
 } from 'react-native';
+import { LinearGradient } from 'expo-linear-gradient';
+import { MaterialCommunityIcons } from '@expo/vector-icons';
 import Card from '../../components/common/Card';
 import Button from '../../components/common/Button';
 import ErrorMessage from '../../components/common/ErrorMessage';
@@ -143,105 +149,187 @@ const ManageStaffScreen = () => {
     if (loading) {
         return (
             <View style={styles.loadingContainer}>
-                <ActivityIndicator size="large" color={colors.brownie} />
+                <ActivityIndicator size="large" color="#5E3023" />
+                <Text style={styles.loadingText}>Loading Team Data...</Text>
             </View>
         );
     }
 
     return (
         <View style={styles.container}>
+            <StatusBar barStyle="light-content" />
+
+            {/* 1. Custom Gradient Header */}
+            <LinearGradient
+                colors={['#2D1B16', '#5E3023']}
+                start={{ x: 0, y: 0 }}
+                end={{ x: 1, y: 1 }}
+                style={styles.headerGradient}
+            >
+                <View style={styles.headerContent}>
+                    <View>
+                        <Text style={styles.headerTitle}>ADMINISTRATION</Text>
+                        <Text style={styles.headerSubtitle}>Manage Staff Team</Text>
+                    </View>
+                    <View style={styles.headerIconContainer}>
+                        <MaterialCommunityIcons name="account-group" size={28} color="#FFF" />
+                    </View>
+                </View>
+            </LinearGradient>
+
             <ScrollView
                 style={styles.content}
+                contentContainerStyle={{ paddingBottom: 40 }}
                 refreshControl={
-                    <RefreshControl refreshing={refreshing} onRefresh={onRefresh} colors={[colors.brownie]} />
+                    <RefreshControl refreshing={refreshing} onRefresh={onRefresh} tintColor="#5E3023" />
                 }
+                showsVerticalScrollIndicator={false}
             >
-                <Text style={styles.title}>Manage Staff</Text>
+                {/* 2. Action Bar / Add Button */}
+                {!showForm && (
+                    <TouchableOpacity
+                        style={styles.addButton}
+                        activeOpacity={0.8}
+                        onPress={() => {
+                            setShowForm(true);
+                            setError('');
+                            setFormData({ name: '', email: '', password: '' });
+                        }}
+                    >
+                        <LinearGradient
+                            colors={['#5E3023', '#8B5E3C']}
+                            start={{ x: 0, y: 0 }}
+                            end={{ x: 1, y: 0 }}
+                            style={styles.addButtonGradient}
+                        >
+                            <MaterialCommunityIcons name="account-plus" size={24} color="#FFF" />
+                            <Text style={styles.addButtonText}>Add New Staff Member</Text>
+                        </LinearGradient>
+                    </TouchableOpacity>
+                )}
 
-                {/* Toggle Button for Registration Form */}
-                <Button
-                    title={showForm ? 'Cancel' : '+ Register New Staff'}
-                    onPress={() => {
-                        setShowForm(!showForm);
-                        setError('');
-                        setFormData({ name: '', email: '', password: '' });
-                    }}
-                    variant={showForm ? 'outline' : 'primary'}
-                    style={styles.toggleButton}
-                />
-
-                {/* Conditional Rendering: Registration Form */}
+                {/* 3. Registration Form Card */}
                 {showForm && (
-                    <Card style={styles.formCard}>
-                        <Text style={styles.formTitle}>Register Staff Member</Text>
+                    <View style={styles.formContainer}>
+                        <View style={styles.formHeader}>
+                            <Text style={styles.formTitle}>New Staff Registration</Text>
+                            <TouchableOpacity onPress={() => setShowForm(false)} style={styles.closeButton}>
+                                <MaterialCommunityIcons name="close" size={20} color="#6B7280" />
+                            </TouchableOpacity>
+                        </View>
 
                         <ErrorMessage message={error} />
 
-                        <Text style={styles.label}>Full Name</Text>
-                        <TextInput
-                            style={styles.input}
-                            placeholder="Enter staff name"
-                            value={formData.name}
-                            onChangeText={(text) => setFormData({ ...formData, name: text })}
-                            autoCapitalize="words"
-                        />
+                        <View style={styles.inputGroup}>
+                            <Text style={styles.label}>Full Name</Text>
+                            <View style={styles.inputWrapper}>
+                                <MaterialCommunityIcons name="account" size={20} color="#9CA3AF" style={styles.inputIcon} />
+                                <TextInput
+                                    style={styles.input}
+                                    placeholder="e.g. John Doe"
+                                    value={formData.name}
+                                    onChangeText={(text) => setFormData({ ...formData, name: text })}
+                                    autoCapitalize="words"
+                                />
+                            </View>
+                        </View>
 
-                        <Text style={styles.label}>Email</Text>
-                        <TextInput
-                            style={styles.input}
-                            placeholder="Enter email"
-                            value={formData.email}
-                            onChangeText={(text) => setFormData({ ...formData, email: text })}
-                            keyboardType="email-address"
-                            autoCapitalize="none"
-                            autoCorrect={false}
-                        />
+                        <View style={styles.inputGroup}>
+                            <Text style={styles.label}>Email Address</Text>
+                            <View style={styles.inputWrapper}>
+                                <MaterialCommunityIcons name="email" size={20} color="#9CA3AF" style={styles.inputIcon} />
+                                <TextInput
+                                    style={styles.input}
+                                    placeholder="e.g. john@cafeteria.com"
+                                    value={formData.email}
+                                    onChangeText={(text) => setFormData({ ...formData, email: text })}
+                                    keyboardType="email-address"
+                                    autoCapitalize="none"
+                                />
+                            </View>
+                        </View>
 
-                        <Text style={styles.label}>Password</Text>
-                        <TextInput
-                            style={styles.input}
-                            placeholder="Enter password (min 6 characters)"
-                            value={formData.password}
-                            onChangeText={(text) => setFormData({ ...formData, password: text })}
-                            secureTextEntry={true} // Hides text for security
-                            autoCapitalize="none"
-                        />
+                        <View style={styles.inputGroup}>
+                            <Text style={styles.label}>Password</Text>
+                            <View style={styles.inputWrapper}>
+                                <MaterialCommunityIcons name="lock" size={20} color="#9CA3AF" style={styles.inputIcon} />
+                                <TextInput
+                                    style={styles.input}
+                                    placeholder="Min. 6 characters"
+                                    value={formData.password}
+                                    onChangeText={(text) => setFormData({ ...formData, password: text })}
+                                    secureTextEntry={true}
+                                />
+                            </View>
+                        </View>
 
                         <Button
-                            title="Register Staff"
+                            title="Create Account"
                             onPress={handleRegister}
                             loading={submitting}
                             style={styles.submitButton}
                         />
-                    </Card>
+                    </View>
                 )}
 
-                {/* Staff List Section */}
-                <Text style={styles.sectionTitle}>Staff Members ({staff.length})</Text>
+                {/* 4. Staff List */}
+                <View style={styles.listHeader}>
+                    <Text style={styles.sectionTitle}>TEAM MEMBERS</Text>
+                    <View style={styles.badge}>
+                        <Text style={styles.badgeText}>{staff.length}</Text>
+                    </View>
+                </View>
 
                 {staff.length > 0 ? (
-                    staff.map((member) => (
-                        <Card key={member._id} style={styles.staffCard}>
-                            <View style={styles.staffInfo}>
-                                <View style={styles.staffDetails}>
-                                    <Text style={styles.staffName}>{member.name}</Text>
-                                    <Text style={styles.staffEmail}>{member.email}</Text>
+                    <View style={styles.gridContainer}>
+                        {staff.map((member) => (
+                            <View key={member._id} style={styles.staffCard}>
+                                <View style={styles.avatarContainer}>
+                                    <LinearGradient
+                                        colors={['#E0F2FE', '#BAE6FD']}
+                                        style={styles.avatarGradient}
+                                    >
+                                        <Text style={styles.avatarText}>
+                                            {member.name.charAt(0).toUpperCase()}
+                                        </Text>
+                                    </LinearGradient>
                                 </View>
-                                {/* Delete Action */}
+
+                                <View style={styles.cardInfo}>
+                                    <Text style={styles.staffName} numberOfLines={1}>{member.name}</Text>
+                                    <Text style={styles.staffEmail} numberOfLines={1}>{member.email}</Text>
+                                    <View style={styles.roleBadge}>
+                                        <Text style={styles.roleText}>STAFF</Text>
+                                    </View>
+                                </View>
+
                                 <TouchableOpacity
-                                    style={styles.deleteButton}
+                                    style={styles.deleteAction}
                                     onPress={() => handleDelete(member._id, member.name)}
                                 >
-                                    <Text style={styles.deleteButtonText}>Delete</Text>
+                                    <MaterialCommunityIcons name="trash-can-outline" size={20} color="#EF4444" />
                                 </TouchableOpacity>
                             </View>
-                        </Card>
-                    ))
+                        ))}
+                    </View>
                 ) : (
-                    <Card>
-                        <Text style={styles.noDataText}>No staff members registered</Text>
-                    </Card>
+                    <View style={styles.emptyState}>
+                        <MaterialCommunityIcons name="account-group-outline" size={48} color="#D1D5DB" />
+                        <Text style={styles.emptyStateText}>No staff members found.</Text>
+                        <Text style={styles.emptyStateSubtext}>Add your first team member using the button above.</Text>
+                    </View>
                 )}
+
+                {/* Decorative Footer Illustration */}
+                <View style={styles.decorativeFooter}>
+                    <View style={styles.decorativeIcons}>
+                        <MaterialCommunityIcons name="coffee-outline" size={60} color="rgba(94, 48, 35, 0.1)" />
+                        <MaterialCommunityIcons name="chef-hat" size={100} color="rgba(94, 48, 35, 0.15)" style={{ marginHorizontal: -20, marginTop: -30 }} />
+                        <MaterialCommunityIcons name="silverware-fork-knife" size={60} color="rgba(94, 48, 35, 0.1)" />
+                    </View>
+                    <Text style={styles.decorativeText}>Streamline Your Service</Text>
+                    <Text style={styles.decorativeSubtext}>Manage your cafeteria team efficiently</Text>
+                </View>
             </ScrollView>
         </View>
     );
@@ -250,92 +338,272 @@ const ManageStaffScreen = () => {
 const styles = StyleSheet.create({
     container: {
         flex: 1,
-        backgroundColor: colors.background,
-    },
-    content: {
-        flex: 1,
-        padding: 16,
+        backgroundColor: '#F3F4F6',
     },
     loadingContainer: {
         flex: 1,
         justifyContent: 'center',
         alignItems: 'center',
-        backgroundColor: colors.background,
     },
-    title: {
-        ...typography.h2,
-        color: colors.brownie,
-        marginBottom: 16,
-    },
-    toggleButton: {
-        marginBottom: 16,
-    },
-    formCard: {
-        marginBottom: 20,
-    },
-    formTitle: {
-        ...typography.h3,
-        color: colors.brownie,
-        marginBottom: 16,
-    },
-    label: {
-        ...typography.body,
-        color: colors.brownie,
-        marginBottom: 8,
+    loadingText: {
+        marginTop: 12,
+        color: '#6B7280',
         fontWeight: '600',
     },
-    input: {
-        backgroundColor: colors.white,
-        borderWidth: 1,
-        borderColor: colors.brownieLight,
-        borderRadius: 8,
-        padding: 12,
-        fontSize: 16,
-        marginBottom: 16,
+    headerGradient: {
+        paddingTop: Platform.OS === 'ios' ? 40 : 20,
+        paddingBottom: 24,
+        paddingHorizontal: 20,
+        // Removed border radius for modern flat look
+        shadowColor: '#5E3023',
+        shadowOffset: { width: 0, height: 4 },
+        shadowOpacity: 0.15,
+        shadowRadius: 12,
+        elevation: 6,
     },
-    submitButton: {
-        marginTop: 8,
-    },
-    sectionTitle: {
-        ...typography.h3,
-        color: colors.brownie,
-        marginBottom: 12,
-    },
-    staffCard: {
-        marginBottom: 12,
-    },
-    staffInfo: {
+    headerContent: {
         flexDirection: 'row',
         justifyContent: 'space-between',
         alignItems: 'center',
+        marginTop: 10,
     },
-    staffDetails: {
+    headerTitle: {
+        fontSize: 12,
+        fontWeight: '900',
+        color: 'rgba(255,255,255,0.7)',
+        letterSpacing: 1.5,
+        marginBottom: 4,
+    },
+    headerSubtitle: {
+        fontSize: 24,
+        fontWeight: '800',
+        color: '#FFFFFF',
+        letterSpacing: 0.5,
+    },
+    headerIconContainer: {
+        backgroundColor: 'rgba(255,255,255,0.15)',
+        padding: 10,
+        borderRadius: 12,
+    },
+    content: {
+        flex: 1,
+        paddingTop: 0,
+    },
+    addButton: {
+        marginHorizontal: 16,
+        marginTop: 20, // Added significant spacing from header
+        marginBottom: 20,
+        shadowColor: '#5E3023',
+        shadowOffset: { width: 0, height: 8 },
+        shadowOpacity: 0.2,
+        shadowRadius: 12,
+        elevation: 8,
+        borderRadius: 16,
+    },
+    addButtonGradient: {
+        flexDirection: 'row',
+        alignItems: 'center',
+        justifyContent: 'center',
+        paddingVertical: 16,
+        borderRadius: 16,
+    },
+    addButtonText: {
+        color: '#FFFFFF',
+        fontSize: 16,
+        fontWeight: '700',
+        marginLeft: 10,
+    },
+    formContainer: {
+        backgroundColor: '#FFFFFF',
+        marginHorizontal: 16,
+        marginTop: 20, // Added spacing from header
+        borderRadius: 20,
+        padding: 20,
+        marginBottom: 24,
+        shadowColor: '#000',
+        shadowOffset: { width: 0, height: 4 },
+        shadowOpacity: 0.1,
+        shadowRadius: 12,
+        elevation: 5,
+    },
+    formHeader: {
+        flexDirection: 'row',
+        justifyContent: 'space-between',
+        alignItems: 'center',
+        marginBottom: 20,
+    },
+    formTitle: {
+        fontSize: 18,
+        fontWeight: '800',
+        color: '#1F2937',
+    },
+    closeButton: {
+        padding: 4,
+        backgroundColor: '#F3F4F6',
+        borderRadius: 20,
+    },
+    inputGroup: {
+        marginBottom: 16,
+    },
+    label: {
+        fontSize: 13,
+        fontWeight: '700',
+        color: '#4B5563',
+        marginBottom: 6,
+        marginLeft: 4,
+    },
+    inputWrapper: {
+        flexDirection: 'row',
+        alignItems: 'center',
+        backgroundColor: '#F9FAFB',
+        borderWidth: 1,
+        borderColor: '#E5E7EB',
+        borderRadius: 12,
+        paddingHorizontal: 12,
+    },
+    inputIcon: {
+        marginRight: 10,
+    },
+    input: {
+        flex: 1,
+        paddingVertical: 12,
+        fontSize: 15,
+        color: '#1F2937',
+    },
+    submitButton: {
+        marginTop: 8,
+        borderRadius: 12,
+    },
+    listHeader: {
+        flexDirection: 'row',
+        alignItems: 'center',
+        paddingHorizontal: 20,
+        marginBottom: 16,
+    },
+    sectionTitle: {
+        fontSize: 13,
+        fontWeight: '900',
+        color: '#9CA3AF',
+        letterSpacing: 1,
+        marginRight: 10,
+    },
+    badge: {
+        backgroundColor: '#E5E7EB',
+        paddingHorizontal: 8,
+        paddingVertical: 2,
+        borderRadius: 10,
+    },
+    badgeText: {
+        fontSize: 12,
+        fontWeight: '700',
+        color: '#4B5563',
+    },
+    gridContainer: {
+        paddingHorizontal: 16,
+        gap: 12,
+    },
+    staffCard: {
+        flexDirection: 'row',
+        alignItems: 'center',
+        backgroundColor: '#FFFFFF',
+        padding: 16,
+        borderRadius: 16,
+        shadowColor: '#000',
+        shadowOffset: { width: 0, height: 2 },
+        shadowOpacity: 0.05,
+        shadowRadius: 4,
+        elevation: 2,
+        marginBottom: 12, // Ensure spacing between items
+        borderWidth: 1,
+        borderColor: 'transparent', // Prepare for potential hover state
+    },
+    avatarContainer: {
+        marginRight: 16,
+    },
+    avatarGradient: {
+        width: 48,
+        height: 48,
+        borderRadius: 14,
+        justifyContent: 'center',
+        alignItems: 'center',
+    },
+    avatarText: {
+        fontSize: 20,
+        fontWeight: '800',
+        color: '#0284C7',
+    },
+    cardInfo: {
         flex: 1,
     },
     staffName: {
-        ...typography.body,
-        color: colors.brownie,
-        fontWeight: '600',
-        marginBottom: 4,
+        fontSize: 16,
+        fontWeight: '700',
+        color: '#111827',
+        marginBottom: 2,
     },
     staffEmail: {
-        ...typography.caption,
-        color: colors.gray,
+        fontSize: 13,
+        color: '#6B7280',
+        marginBottom: 6,
     },
-    deleteButton: {
-        backgroundColor: colors.error,
-        paddingHorizontal: 16,
-        paddingVertical: 8,
-        borderRadius: 8,
+    roleBadge: {
+        backgroundColor: '#F3F4F6',
+        alignSelf: 'flex-start',
+        paddingHorizontal: 8,
+        paddingVertical: 2,
+        borderRadius: 6,
     },
-    deleteButtonText: {
-        color: colors.white,
-        ...typography.button,
+    roleText: {
+        fontSize: 10,
+        fontWeight: '700',
+        color: '#6B7280',
+        letterSpacing: 0.5,
     },
-    noDataText: {
-        ...typography.body,
-        color: colors.gray,
+    deleteAction: {
+        padding: 10,
+        backgroundColor: '#FEF2F2', // Light red background
+        borderRadius: 12,
+    },
+    emptyState: {
+        alignItems: 'center',
+        paddingVertical: 40,
+        paddingHorizontal: 20,
+    },
+    emptyStateText: {
+        fontSize: 16,
+        fontWeight: '700',
+        color: '#374151',
+        marginTop: 16,
+    },
+    emptyStateSubtext: {
+        fontSize: 14,
+        color: '#6B7280',
         textAlign: 'center',
+        marginTop: 4,
+    },
+    decorativeFooter: {
+        alignItems: 'center',
+        marginTop: 60,
+        marginBottom: 20,
+        opacity: 0.8,
+    },
+    decorativeIcons: {
+        flexDirection: 'row',
+        alignItems: 'center',
+        justifyContent: 'center',
+        marginBottom: 16,
+    },
+    decorativeText: {
+        fontSize: 14,
+        fontWeight: '700',
+        color: 'rgba(94, 48, 35, 0.3)',
+        letterSpacing: 1,
+        textTransform: 'uppercase',
+    },
+    decorativeSubtext: {
+        fontSize: 12,
+        color: 'rgba(94, 48, 35, 0.2)',
+        marginTop: 4,
         fontStyle: 'italic',
     },
 });
