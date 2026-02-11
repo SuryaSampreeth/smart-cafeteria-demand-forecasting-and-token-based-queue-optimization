@@ -1,100 +1,43 @@
 # Smart Cafeteria Demand Forecasting and Token-Based Queue Optimisation System
 
-## Introduction
+## Table of Contents
 
-This project aims to develop an intelligent cafeteria management platform that uses data-driven insights to optimize food service operations, minimize waste, and improve student experience. Instead of implementing a simple food-ordering interface, the platform allows users to prebook meal slots, forecast expected crowd levels, and receive predicted waiting times based on historical demand patterns, weather conditions, or academic schedules. 
+- [Intro](#intro)
+- [About](#about)
+- [Project Structure](#project-structure)
+- [Tech Stack](#tech-stack)
+- [Installing and Updating](#installing-and-updating)
+    - [Prerequisites](#prerequisites)
+    - [Backend Setup](#backend-setup)
+    - [Frontend Setup](#frontend-setup)
+    - [Environment Variables](#environment-variables)
+- [Usage](#usage)
+    - [User Roles & Features](#user-roles--features)
+    - [Key Features](#key-features)
+    - [API Endpoints](#api-endpoints)
+- [Future Scope](#future-scope)
+- [Contributing](#contributing)
+- [License](#license)
+- [Acknowledgments](#acknowledgments)
+
+## Intro
+
+This project aims to develop an intelligent cafeteria management platform that uses data-driven insights to optimize food service operations, minimize waste, and improve student experience. Instead of implementing a simple food-ordering interface, the platform allows users to prebook meal slots, forecast expected crowd levels, and receive predicted waiting times based on historical demand patterns, weather conditions, or academic schedules.
+
+## About
 
 AI/ML forecasting supports preparation planning to reduce waste, balance resource utilization, and improve sustainability. Token-based queue scheduling, real-time occupancy dashboards, and supply–demand analytics are incorporated. Ethical and sustainability considerations—such as transparent allocation fairness, reduction of unnecessary food discard, and support for equitable serving—drive system design and evaluation.
 
-## Project Objectives
+**Project Objectives**
 
-- **Improve cafeteria efficiency and student dining experience**
-- **Reduce overcrowding, waiting time, and food wastage**
-- **Enable fair and transparent meal serving through slot-based tokens**
-- **Provide data-driven insights for better planning and resource allocation**
-
-## User Roles & Features
-
-### Student Module
-
-- **Book meals based on available time slots** - Pre-order meals for specific time slots to avoid queues
-- **View daily menu and real-time crowd status** - Access current menu items and live cafeteria occupancy
-- **Track booking status** - Monitor orders through pending, active, and completed states
-- **Access last 7 days' crowd patterns** - View historical crowd data with hourly graphs for informed decision-making
-- **Receive predicted waiting times** - Get estimates based on current crowd levels and booking patterns
-- **Manage profile** - Update personal information and preferences
-
-### Staff Module
-
-- **Dashboard showing current capacity and active tokens** - Real-time overview of cafeteria operations
-- **Call next token and mark meals as completed** - Efficient order fulfillment workflow
-- **Crowd alerts during peak load** - Notifications when cafeteria reaches high occupancy
-- **Serving speed recommendations** - Data-driven suggestions based on current crowd level
-- **Order queue management** - View and process pending orders systematically
-
-### Admin Module
-
-- **Sync daily bookings with active tokens** - Ensure token system reflects current bookings
-- **Register and manage staff accounts** - Control staff access and permissions
-- **Manage menu items** - Add, update, and remove menu items with pricing and availability
-- **View crowd analysis** - Access peak hours, occupancy summary, and system alerts
-- **Dashboard statistics** - Monitor active tokens, served orders, revenue, cancelled bookings, and user counts
-
-## Key Features
-
-### Core Functionality
-
-- **User Authentication** - Secure registration and login system with JWT-based authentication
-- **Role-Based Access Control** - Separate interfaces and permissions for students, staff, and administrators
-- **Menu Management** - Dynamic menu system with item availability, pricing, and images
-- **Token-Based Queue Management** - Slot-based booking system with auto-expiry by time slot
-- **Real-Time Crowd Monitoring** - Live occupancy tracking and statistics
-- **Booking System** - Pre-order meals with token-based queue management
-
-### Advanced Features
-
-- **Crowd Forecasting** - Historical data-driven insights for demand prediction
-- **Waiting Time Prediction** - Estimated wait times based on current and historical patterns
-- **Peak Hour Analysis** - Identify high-traffic periods for better resource planning
-- **Alert System** - Automated notifications for staff during peak loads
-- **Analytics Dashboard** - Comprehensive statistics including revenue tracking and user metrics
-- **Historical Data Visualization** - 7-day crowd pattern charts with hourly breakdowns
-
-### Sustainability & Fairness Focus
-
-- **Reduces unnecessary food preparation and wastage** - Demand forecasting enables accurate preparation planning (in the upcoming sprints)
-- **Ensures fair serving order and transparent allocation** - Token-based system prevents queue jumping (in the upcoming sprints)
-- **Supports balanced resource usage during peak hours** - Staff recommendations optimize service delivery (in the upcoming sprints)
-- **Promotes ethical food service operations** - Data-driven decisions reduce environmental impact (in the upcoming sprints)
-
-## Tech Stack
-
-### Backend
-
-- **Runtime**: Node.js
-- **Framework**: Express.js
-- **Database**: MongoDB with Mongoose ODM
-- **Authentication**: JSON Web Tokens (JWT)
-- **Password Security**: bcryptjs for password hashing
-- **Validation**: express-validator
-- **Environment Management**: dotenv
-- **CORS**: Cross-Origin Resource Sharing enabled
-- **Development Tools**: Nodemon for hot reloading
-
-### Frontend
-
-- **Framework**: React Native with Expo
-- **Navigation**: React Navigation (Native Stack & Bottom Tabs)
-- **State Management**: React Context API
-- **HTTP Client**: Axios
-- **UI Components**: Custom components with React Native
-- **Charts**: react-native-chart-kit for data visualization
-- **Secure Storage**: expo-secure-store for token management
-- **Platform Support**: iOS, Android, and Web
+- Improve cafeteria efficiency and student dining experience
+- Reduce overcrowding, waiting time, and food wastage
+- Enable fair and transparent meal serving through slot-based tokens
+- Provide data-driven insights for better planning and resource allocation
 
 ## Project Structure
 
-```
+```text
 BeforeUIEnhance/
 │
 ├── backend/
@@ -148,7 +91,8 @@ BeforeUIEnhance/
 │   ├── services/
 │   │   ├── alertService.js                 # Alert generation service
 │   │   ├── crowdPredictionService.js       # Crowd forecasting service
-│   │   └── crowdTrackingService.js         # Real-time crowd tracking
+│   │   ├── crowdTrackingService.js         # Real-time crowd tracking
+│   │   ├── expiredBookingService.js        # Expired booking service
 │   │
 │   ├── utils/
 │   │   ├── queueManager.js                 # Token queue management utilities
@@ -233,10 +177,32 @@ BeforeUIEnhance/
 └── README.md                               # This file
 ```
 
-## Getting Started
+## Tech Stack
+
+**Backend**
+- **Runtime**: Node.js
+- **Framework**: Express.js
+- **Database**: MongoDB with Mongoose ODM
+- **Authentication**: JSON Web Tokens (JWT)
+- **Password Security**: bcryptjs for password hashing
+- **Validation**: express-validator
+- **Environment Management**: dotenv
+- **CORS**: Cross-Origin Resource Sharing enabled
+- **Development Tools**: Nodemon for hot reloading
+
+**Frontend**
+- **Framework**: React Native with Expo
+- **Navigation**: React Navigation (Native Stack & Bottom Tabs)
+- **State Management**: React Context API
+- **HTTP Client**: Axios
+- **UI Components**: Custom components with React Native
+- **Charts**: react-native-chart-kit for data visualization
+- **Secure Storage**: expo-secure-store for token management
+- **Platform Support**: iOS, Android, and Web
+
+## Installing and Updating
 
 ### Prerequisites
-
 - Node.js (v14 or higher)
 - MongoDB Atlas account or local MongoDB installation
 - Expo CLI (for frontend development)
@@ -244,91 +210,151 @@ BeforeUIEnhance/
 
 ### Backend Setup
 
-1. Navigate to the backend directory:
-   ```bash
-   cd backend
-   ```
+Navigate to the backend directory:
 
-2. Install dependencies:
-   ```bash
-   npm install
-   ```
+```bash
+cd backend
+```
 
-3. Configure environment variables in `.env`:
-   ```
-   PORT=5000
-   MONGODB_URI=your_mongodb_connection_string
-   JWT_SECRET=your_jwt_secret_key
-   NODE_ENV=development
-   ```
+Install dependencies:
 
-4. Seed the admin user (optional):
-   ```bash
-   npm run seed
-   ```
+```bash
+npm install
+```
 
-5. Start the development server:
-   ```bash
-   npm run dev
-   ```
+Start the development server:
 
-The backend server will run on `http://localhost:5000`
+```bash
+npm run dev
+```
+
+*The backend server will run on `http://localhost:5000`*
+
+Optional: Seed the admin user
+
+```bash
+npm run seed
+```
 
 ### Frontend Setup
 
-1. Navigate to the frontend directory:
-   ```bash
-   cd frontend
-   ```
+Navigate to the frontend directory:
 
-2. Install dependencies:
-   ```bash
-   npm install
-   ```
+```bash
+cd frontend
+```
 
-3. Configure the API endpoint in `src/config/config.js` to point to your backend server
+Install dependencies:
 
-4. Start the Expo development server:
-   ```bash
-   npx expo start --web
-   ```
+```bash
+npm install
+```
 
-5. Run on your preferred platform:
-   - Press `a` for Android
-   - Press `i` for iOS
-   - Press `w` for Web
+Configure the API endpoint in `src/config/config.js` to point to your backend server.
 
-## API Endpoints
+Start the Expo development server:
 
-### Authentication
+```bash
+npx expo start --web
+```
+
+Run on your preferred platform:
+- Press `a` for Android
+- Press `i` for iOS
+- Press `w` for Web
+
+### Environment Variables
+
+Configure environment variables in `.env` in the backend directory:
+
+```env
+PORT=5000
+MONGODB_URI=your_mongodb_connection_string
+JWT_SECRET=your_jwt_secret_key
+NODE_ENV=development
+```
+
+## Usage
+
+### User Roles & Features
+
+**Student Module**
+- **Book meals based on available time slots**: Pre-order meals for specific time slots to avoid queues.
+- **View daily menu and real-time crowd status**: Access current menu items and live cafeteria occupancy.
+- **Track booking status**: Monitor orders through pending, active, and completed states.
+- **Access last 7 days' crowd patterns**: View historical crowd data with hourly graphs for informed decision-making.
+- **Receive predicted waiting times**: Get estimates based on current crowd levels and booking patterns.
+- **Manage profile**: Update personal information and preferences.
+
+**Staff Module**
+- **Dashboard showing current capacity and active tokens**: Real-time overview of cafeteria operations.
+- **Call next token and mark meals as completed**: Efficient order fulfillment workflow.
+- **Crowd alerts during peak load**: Notifications when cafeteria reaches high occupancy.
+- **Serving speed recommendations**: Data-driven suggestions based on current crowd level.
+- **Order queue management**: View and process pending orders systematically.
+
+**Admin Module**
+- **Sync daily bookings with active tokens**: Ensure token system reflects current bookings.
+- **Register and manage staff accounts**: Control staff access and permissions.
+- **Manage menu items**: Add, update, and remove menu items with pricing and availability.
+- **View crowd analysis**: Access peak hours, occupancy summary, and system alerts.
+- **Dashboard statistics**: Monitor active tokens, served orders, revenue, cancelled bookings, and user counts.
+
+### Key Features
+
+**Core Functionality**
+- **User Authentication**: Secure registration and login system with JWT-based authentication.
+- **Role-Based Access Control**: Separate interfaces and permissions for students, staff, and administrators.
+- **Menu Management**: Dynamic menu system with item availability, pricing, and images.
+- **Token-Based Queue Management**: Slot-based booking system with auto-expiry by time slot.
+- **Real-Time Crowd Monitoring**: Live occupancy tracking and statistics.
+- **Booking System**: Pre-order meals with token-based queue management.
+
+**Advanced Features**
+- **Crowd Forecasting**: Historical data-driven insights for demand prediction.
+- **Waiting Time Prediction**: Estimated wait times based on current and historical patterns.
+- **Peak Hour Analysis**: Identify high-traffic periods for better resource planning.
+- **Alert System**: Automated notifications for staff during peak loads.
+- **Analytics Dashboard**: Comprehensive statistics including revenue tracking and user metrics.
+- **Historical Data Visualization**: 7-day crowd pattern charts with hourly breakdowns.
+
+**Sustainability & Fairness Focus**
+- Reduces unnecessary food preparation and wastage - Demand forecasting enables accurate preparation planning (in the upcoming sprints).
+- Ensures fair serving order and transparent allocation - Token-based system prevents queue jumping (in the upcoming sprints).
+- Supports balanced resource usage during peak hours - Staff recommendations optimize service delivery (in the upcoming sprints).
+- Promotes ethical food service operations - Data-driven decisions reduce environmental impact (in the upcoming sprints).
+
+### API Endpoints
+
+**Authentication**
 - `POST /api/auth/register` - Register new user
 - `POST /api/auth/login` - User login
 
-### Bookings
+**Bookings**
 - `GET /api/bookings` - Get user bookings
 - `POST /api/bookings` - Create new booking
 - `PUT /api/bookings/:id` - Update booking status
 - `DELETE /api/bookings/:id` - Cancel booking
 
-### Menu
+**Menu**
 - `GET /api/menu` - Get all menu items
 - `POST /api/menu` - Add menu item (Admin only)
 - `PUT /api/menu/:id` - Update menu item (Admin only)
 - `DELETE /api/menu/:id` - Delete menu item (Admin only)
 
-### Crowd Analytics
+**Crowd Analytics**
 - `GET /api/crowd/current` - Get current crowd level
 - `GET /api/crowd/patterns` - Get historical crowd patterns
 - `GET /api/crowd/predictions` - Get crowd predictions
 - `GET /api/crowd/waiting-time` - Get estimated waiting time
 
-### Staff
+**Staff**
 - `GET /api/staff/orders` - Get pending orders
 - `PUT /api/staff/orders/:id` - Update order status
 - `GET /api/staff/dashboard` - Get staff dashboard data
 - `POST /api/staff/call-token` - Call next token
 
-### Admin
+**Admin**
 - `GET /api/admin/stats` - Get dashboard statistics
 - `GET /api/admin/users` - Get all users
 - `PUT /api/admin/users/:id` - Update user details
@@ -337,11 +363,11 @@ The backend server will run on `http://localhost:5000`
 
 ## Future Scope
 
-- **AI-based demand forecasting for preparation planning** - Machine learning models to predict meal demand
-- **Improved crowd and waiting time prediction** - Enhanced algorithms using weather and academic calendar data
-- **Integration with weather APIs** - Factor weather conditions into demand forecasting
-- **Academic schedule integration** - Adjust predictions based on exam periods and class schedules
-- **Sustaiability Reports** - Sustainability reports with waste tracking and Demand based food preparation
+- **AI-based demand forecasting for preparation planning**: Machine learning models to predict meal demand.
+- **Improved crowd and waiting time prediction**: Enhanced algorithms using weather and academic calendar data.
+- **Integration with weather APIs**: Factor weather conditions into demand forecasting.
+- **Academic schedule integration**: Adjust predictions based on exam periods and class schedules.
+- **Sustainability Reports**: Sustainability reports with waste tracking and Demand based food preparation.
 
 ## Contributing
 
