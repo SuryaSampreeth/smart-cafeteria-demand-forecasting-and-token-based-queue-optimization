@@ -1,155 +1,180 @@
-# Smart Cafeteria Management System
+# Smart Cafeteria Demand Forecasting and Token-Based Queue Optimisation System
 
-A comprehensive digital solution for managing cafeteria operations, designed to streamline the food ordering process, reduce wait times, and improve the overall dining experience for students and staff.
+## Table of Contents
 
-## Overview
+- [Intro](#intro)
+- [About](#about)
+- [Project Structure](#project-structure)
+- [Tech Stack](#tech-stack)
+- [Installing and Updating](#installing-and-updating)
+    - [Prerequisites](#prerequisites)
+    - [Backend Setup](#backend-setup)
+    - [Frontend Setup](#frontend-setup)
+    - [Environment Variables](#environment-variables)
+- [Usage](#usage)
+    - [User Roles & Features](#user-roles--features)
+    - [Key Features](#key-features)
+    - [API Endpoints](#api-endpoints)
+- [Future Scope](#future-scope)
+- [Contributing](#contributing)
+- [License](#license)
+- [Acknowledgments](#acknowledgments)
 
-The Smart Cafeteria Management System is a full-stack application that enables students to pre-book meals, view real-time queue status, and manage their orders efficiently. The system provides role-based access for students, staff, and administrators, each with tailored functionalities to support smooth cafeteria operations.
+## Intro
 
-Students can browse the menu, place orders, and receive token numbers for pickup. Staff members can manage order fulfillment and update order statuses in real-time. Administrators have complete oversight of the system, including menu management, user administration, and analytics dashboards to track cafeteria performance.
+This project aims to develop an intelligent cafeteria management platform that uses data-driven insights to optimize food service operations, minimize waste, and improve student experience. Instead of implementing a simple food-ordering interface, the platform allows users to prebook meal slots, forecast expected crowd levels, and receive predicted waiting times based on historical demand patterns, weather conditions, or academic schedules.
 
-## Key Features
+## About
 
-- **User Authentication**: Secure registration and login system with JWT-based authentication
-- **Role-Based Access Control**: Separate interfaces and permissions for students, staff, and administrators
-- **Menu Management**: Dynamic menu system with item availability and pricing
-- **Booking System**: Pre-order meals with token-based queue management
-- **Real-Time Updates**: Live status tracking for orders and queue positions
-- **Admin Dashboard**: Comprehensive analytics including active tokens, served orders, revenue tracking, and user statistics
-- **Staff Interface**: Efficient order management and fulfillment workflow
-- **Profile Management**: User profile viewing and management capabilities
+AI/ML forecasting supports preparation planning to reduce waste, balance resource utilization, and improve sustainability. Token-based queue scheduling, real-time occupancy dashboards, and supply–demand analytics are incorporated. Ethical and sustainability considerations—such as transparent allocation fairness, reduction of unnecessary food discard, and support for equitable serving—drive system design and evaluation.
 
-## Tech Stack
+**Project Objectives**
 
-### Backend
-
-- **Runtime**: Node.js
-- **Framework**: Express.js
-- **Database**: MongoDB with Mongoose ODM
-- **Authentication**: JSON Web Tokens (JWT)
-- **Password Security**: bcryptjs for password hashing
-- **Validation**: express-validator
-- **Environment Management**: dotenv
-- **CORS**: Cross-Origin Resource Sharing enabled
-- **Development Tools**: Nodemon for hot reloading
-
-### Frontend
-
-- **Framework**: React Native with Expo
-- **Navigation**: React Navigation (Native Stack & Bottom Tabs)
-- **State Management**: React Context API
-- **HTTP Client**: Axios
-- **UI Components**: Custom components with React Native
-- **Charts**: react-native-chart-kit for data visualization
-- **Secure Storage**: expo-secure-store for token management
-- **Platform Support**: iOS, Android, and Web
+- Improve cafeteria efficiency and student dining experience
+- Reduce overcrowding, waiting time, and food wastage
+- Enable fair and transparent meal serving through slot-based tokens
+- Provide data-driven insights for better planning and resource allocation
 
 ## Project Structure
 
-```
-smart-cafetria-model-2/
+```text
+BeforeUIEnhance/
 │
 ├── backend/
 │   ├── config/
-│   │   └── db.js                    # Database connection configuration
+│   │   └── db.js                           # Database connection configuration
 │   │
 │   ├── controllers/
-│   │   ├── adminController.js       # Admin operations logic
-│   │   ├── authController.js        # Authentication logic
-│   │   ├── bookingController.js     # Booking management logic
-│   │   ├── menuController.js        # Menu operations logic
-│   │   └── staffController.js       # Staff operations logic
+│   │   ├── adminController.js              # Admin operations logic
+│   │   ├── authController.js               # Authentication logic
+│   │   ├── bookingController.js            # Booking management logic
+│   │   ├── crowdController.js              # Crowd tracking and analytics logic
+│   │   ├── menuController.js               # Menu operations logic
+│   │   └── staffController.js              # Staff operations logic
 │   │
 │   ├── middleware/
-│   │   ├── auth.js                  # JWT authentication middleware
-│   │   └── roleCheck.js             # Role-based authorization middleware
+│   │   ├── auth.js                         # JWT authentication middleware
+│   │   └── roleCheck.js                    # Role-based authorization middleware
 │   │
 │   ├── models/
-│   │   ├── Booking.js               # Booking schema
-│   │   ├── Menu.js                  # Menu schema
-│   │   ├── MenuItem.js              # Menu item schema
-│   │   ├── Slot.js                  # Time slot schema
-│   │   └── User.js                  # User schema
+│   │   ├── AlertLog.js                     # Alert logging schema
+│   │   ├── Booking.js                      # Booking schema
+│   │   ├── CrowdData.js                    # Real-time crowd data schema
+│   │   ├── CrowdPrediction.js              # Crowd prediction schema
+│   │   ├── Menu.js                         # Menu schema
+│   │   ├── MenuItem.js                     # Menu item schema
+│   │   ├── Slot.js                         # Time slot schema
+│   │   └── User.js                         # User schema
 │   │
 │   ├── routes/
-│   │   ├── admin.js                 # Admin routes
-│   │   ├── auth.js                  # Authentication routes
-│   │   ├── booking.js               # Booking routes
-│   │   ├── menu.js                  # Menu routes
-│   │   └── staff.js                 # Staff routes
+│   │   ├── admin.js                        # Admin routes
+│   │   ├── auth.js                         # Authentication routes
+│   │   ├── booking.js                      # Booking routes
+│   │   ├── crowd.js                        # Crowd analytics routes
+│   │   ├── menu.js                         # Menu routes
+│   │   └── staff.js                        # Staff routes
 │   │
 │   ├── scripts/
-│   │   └── seedAdmin.js             # Database seeding script
+│   │   ├── addMenuImages.js                # Add images to menu items
+│   │   ├── checkQueueOrder.js              # Verify queue ordering
+│   │   ├── fixQueueOrder.js                # Fix queue order issues
+│   │   ├── listMenuItems.js                # List all menu items
+│   │   ├── seedAdmin.js                    # Create admin user
+│   │   ├── seedCrowdData.js                # Populate crowd data
+│   │   ├── seedHistoricalPredictions.js    # Generate historical predictions
+│   │   ├── testDbConnection.js             # Test database connectivity
+│   │   ├── updateBookingWaitTimes.js       # Update waiting time estimates
+│   │   ├── updateMenuImagesFromFile.js     # Batch update menu images
+│   │   ├── updateToLocalImages.js          # Convert to local image paths
+│   │   └── viewHistoricalData.js           # View historical crowd data
+│   │
+│   ├── services/
+│   │   ├── alertService.js                 # Alert generation service
+│   │   ├── crowdPredictionService.js       # Crowd forecasting service
+│   │   ├── crowdTrackingService.js         # Real-time crowd tracking
+│   │   ├── expiredBookingService.js        # Expired booking service
 │   │
 │   ├── utils/
-│   │   └── validators.js            # Input validation utilities
+│   │   ├── queueManager.js                 # Token queue management utilities
+│   │   ├── tokenGenerator.js               # Token generation utilities
+│   │   └── validators.js                   # Input validation utilities
 │   │
-│   ├── .env                         # Environment variables
-│   ├── .gitignore                   # Git ignore rules
-│   ├── package.json                 # Backend dependencies
-│   └── server.js                    # Application entry point
+│   ├── .env                                # Environment variables
+│   ├── .gitignore                          # Git ignore rules
+│   ├── menu_image_urls.md                  # Menu image reference
+│   ├── package.json                        # Backend dependencies
+│   └── server.js                           # Application entry point
 │
 ├── frontend/
-│   ├── assets/                      # Images and static assets
+│   ├── assets/                             # Images and static assets
 │   │
 │   ├── src/
 │   │   ├── components/
-│   │   │   ├── BookingCard.js       # Booking display component
-│   │   │   ├── LoadingSpinner.js    # Loading indicator
-│   │   │   ├── MenuItemCard.js      # Menu item display
-│   │   │   ├── OrderCard.js         # Order display component
-│   │   │   └── StatCard.js          # Statistics card component
+│   │   │   ├── common/
+│   │   │   │   ├── Button.js               # Reusable button component
+│   │   │   │   ├── Card.js                 # Card container component
+│   │   │   │   ├── ErrorMessage.js         # Error display component
+│   │   │   │   ├── Header.js               # Header component
+│   │   │   │   └── Loader.js               # Loading indicator
+│   │   │   ├── AlertCard.js                # Alert display component
+│   │   │   ├── CrowdLevelIndicator.js      # Visual crowd level indicator
+│   │   │   ├── CrowdPatternChart.js        # Historical crowd chart
+│   │   │   └── WaitingTimeCard.js          # Waiting time display
 │   │   │
 │   │   ├── config/
-│   │   │   └── api.js               # API configuration
+│   │   │   └── config.js                   # App configuration
 │   │   │
 │   │   ├── context/
-│   │   │   └── AuthContext.js       # Authentication context
+│   │   │   └── AuthContext.js              # Authentication context
 │   │   │
 │   │   ├── navigation/
-│   │   │   └── AppNavigator.js      # Navigation configuration
+│   │   │   └── AppNavigator.js             # Navigation configuration
 │   │   │
 │   │   ├── screens/
 │   │   │   ├── admin/
-│   │   │   │   ├── AdminHomeScreen.js
-│   │   │   │   ├── ManageMenuScreen.js
-│   │   │   │   └── ManageUsersScreen.js
+│   │   │   │   ├── AdminCrowdAnalytics.js  # Crowd analytics dashboard
+│   │   │   │   ├── AdminHomeScreen.js      # Admin dashboard
+│   │   │   │   ├── ManageMenuScreen.js     # Menu management interface
+│   │   │   │   └── ManageStaffScreen.js    # Staff management interface
 │   │   │   │
 │   │   │   ├── auth/
-│   │   │   │   ├── LoginScreen.js
-│   │   │   │   └── RegisterScreen.js
+│   │   │   │   ├── LoginScreen.js          # User login
+│   │   │   │   └── RegisterScreen.js       # User registration
 │   │   │   │
 │   │   │   ├── staff/
-│   │   │   │   ├── OrderManagementScreen.js
-│   │   │   │   └── StaffHomeScreen.js
+│   │   │   │   ├── QueueManagementScreen.js    # Order queue management
+│   │   │   │   ├── StaffCrowdDashboard.js      # Staff crowd dashboard
+│   │   │   │   └── StaffHomeScreen.js          # Staff home
 │   │   │   │
 │   │   │   └── student/
-│   │   │       ├── BookingScreen.js
-│   │   │       ├── ProfileScreen.js
-│   │   │       ├── StudentHomeScreen.js
-│   │   │       └── ViewMenuScreen.js
+│   │   │       ├── BookingScreen.js            # Meal booking interface
+│   │   │       ├── CrowdMonitorScreen.js       # Real-time crowd monitor
+│   │   │       ├── CrowdPatternsScreen.js      # Historical crowd patterns
+│   │   │       ├── MyTokensScreen.js           # Active tokens view
+│   │   │       ├── ProfileScreen.js            # User profile
+│   │   │       └── StudentHomeScreen.js        # Student home
 │   │   │
 │   │   ├── services/
-│   │   │   └── api.js               # API service layer
+│   │   │   └── api.js                      # API service layer
 │   │   │
 │   │   ├── styles/
-│   │   │   ├── colors.js            # Color palette
-│   │   │   ├── commonStyles.js      # Shared styles
-│   │   │   └── typography.js        # Typography definitions
+│   │   │   ├── colors.js                   # Color palette
+│   │   │   ├── commonStyles.js             # Shared styles
+│   │   │   └── typography.js               # Typography definitions
 │   │   │
 │   │   └── utils/
-│   │       ├── storage.js           # Secure storage utilities
-│   │       └── validators.js        # Form validation
+│   │       ├── constants.js                # App constants
+│   │       └── formatTime.js               # Time formatting utilities
 │   │
-│   ├── .env                         # Frontend environment variables
-│   ├── .gitignore                   # Git ignore rules
-│   ├── App.js                       # Application root component
-│   ├── app.json                     # Expo configuration
-│   ├── index.js                     # Entry point
-│   └── package.json                 # Frontend dependencies
+│   ├── .env                                # Frontend environment variables
+│   ├── .gitignore                          # Git ignore rules
+│   ├── App.js                              # Application root component
+│   ├── app.json                            # Expo configuration
+│   ├── index.js                            # Entry point
+│   └── package.json                        # Frontend dependencies
 │
-├── QUICKSTART.md                    # Quick start guide
-└── README.md                        # This file
+├── QUICKSTART.md                           # Quick start guide
+└── README.md                               # This file
 ```
 
 ## Project Architecture
@@ -221,137 +246,212 @@ flowchart TD
    - Stores data for Users, Bookings, Menu Items, Slots, and Queues.
    - Mongoose ODM is used for schema definition and data validation.
 
-## Getting Started
+## Tech Stack
+
+**Backend**
+- **Runtime**: Node.js
+- **Framework**: Express.js
+- **Database**: MongoDB with Mongoose ODM
+- **Authentication**: JSON Web Tokens (JWT)
+- **Password Security**: bcryptjs for password hashing
+- **Validation**: express-validator
+- **Environment Management**: dotenv
+- **CORS**: Cross-Origin Resource Sharing enabled
+- **Development Tools**: Nodemon for hot reloading
+
+**Frontend**
+- **Framework**: React Native with Expo
+- **Navigation**: React Navigation (Native Stack & Bottom Tabs)
+- **State Management**: React Context API
+- **HTTP Client**: Axios
+- **UI Components**: Custom components with React Native
+- **Charts**: react-native-chart-kit for data visualization
+- **Secure Storage**: expo-secure-store for token management
+- **Platform Support**: iOS, Android, and Web
+
+## Installing and Updating
 
 ### Prerequisites
-
 - Node.js (v14 or higher)
 - MongoDB Atlas account or local MongoDB installation
 - Expo CLI (for frontend development)
-- npm or yarn package manager
+- npm package manager
 
 ### Backend Setup
 
-1. Navigate to the backend directory:
-   ```bash
-   cd backend
-   ```
+Navigate to the backend directory:
 
-2. Install dependencies:
-   ```bash
-   npm install
-   ```
+```bash
+cd backend
+```
 
-3. Configure environment variables in `.env`:
-   ```
-   PORT=5000
-   MONGODB_URI=your_mongodb_connection_string
-   JWT_SECRET=your_jwt_secret_key
-   NODE_ENV=development
-   ```
+Install dependencies:
 
-4. Seed the admin user (optional):
-   ```bash
-   npm run seed
-   ```
+```bash
+npm install
+```
 
-5. Start the development server:
-   ```bash
-   npm run dev
-   ```
+Start the development server:
 
-The backend server will run on `http://localhost:5000`
+```bash
+npm run dev
+```
+
+*The backend server will run on `http://localhost:5000`*
+
+Optional: Seed the admin user
+
+```bash
+npm run seed
+```
 
 ### Frontend Setup
 
-1. Navigate to the frontend directory:
-   ```bash
-   cd frontend
-   ```
+Navigate to the frontend directory:
 
-2. Install dependencies:
-   ```bash
-   npm install
-   ```
+```bash
+cd frontend
+```
 
-3. Configure the API endpoint in `src/config/api.js` to point to your backend server
+Install dependencies:
 
-4. Start the Expo development server:
-   ```bash
-   npm start
-   ```
+```bash
+npm install
+```
 
-5. Run on your preferred platform:
-   - Press `a` for Android
-   - Press `i` for iOS
-   - Press `w` for Web
+Configure the API endpoint in `src/config/config.js` to point to your backend server.
 
-## API Endpoints
+Start the Expo development server:
 
-### Authentication
+```bash
+npx expo start --web
+```
+
+Run on your preferred platform:
+- Press `a` for Android
+- Press `i` for iOS
+- Press `w` for Web
+
+### Environment Variables
+
+Configure environment variables in `.env` in the backend directory:
+
+```env
+PORT=5000
+MONGODB_URI=your_mongodb_connection_string
+JWT_SECRET=your_jwt_secret_key
+NODE_ENV=development
+```
+
+## Usage
+
+### User Roles & Features
+
+**Student Module**
+- **Book meals based on available time slots**: Pre-order meals for specific time slots to avoid queues.
+- **View daily menu and real-time crowd status**: Access current menu items and live cafeteria occupancy.
+- **Track booking status**: Monitor orders through pending, active, and completed states.
+- **Access last 7 days' crowd patterns**: View historical crowd data with hourly graphs for informed decision-making.
+- **Receive predicted waiting times**: Get estimates based on current crowd levels and booking patterns.
+- **Manage profile**: Update personal information and preferences.
+
+**Staff Module**
+- **Dashboard showing current capacity and active tokens**: Real-time overview of cafeteria operations.
+- **Call next token and mark meals as completed**: Efficient order fulfillment workflow.
+- **Crowd alerts during peak load**: Notifications when cafeteria reaches high occupancy.
+- **Serving speed recommendations**: Data-driven suggestions based on current crowd level.
+- **Order queue management**: View and process pending orders systematically.
+
+**Admin Module**
+- **Sync daily bookings with active tokens**: Ensure token system reflects current bookings.
+- **Register and manage staff accounts**: Control staff access and permissions.
+- **Manage menu items**: Add, update, and remove menu items with pricing and availability.
+- **View crowd analysis**: Access peak hours, occupancy summary, and system alerts.
+- **Dashboard statistics**: Monitor active tokens, served orders, revenue, cancelled bookings, and user counts.
+
+### Key Features
+
+**Core Functionality**
+- **User Authentication**: Secure registration and login system with JWT-based authentication.
+- **Role-Based Access Control**: Separate interfaces and permissions for students, staff, and administrators.
+- **Menu Management**: Dynamic menu system with item availability, pricing, and images.
+- **Token-Based Queue Management**: Slot-based booking system with auto-expiry by time slot.
+- **Real-Time Crowd Monitoring**: Live occupancy tracking and statistics.
+- **Booking System**: Pre-order meals with token-based queue management.
+
+**Advanced Features**
+- **Crowd Forecasting**: Historical data-driven insights for demand prediction.
+- **Waiting Time Prediction**: Estimated wait times based on current and historical patterns.
+- **Peak Hour Analysis**: Identify high-traffic periods for better resource planning.
+- **Alert System**: Automated notifications for staff during peak loads.
+- **Analytics Dashboard**: Comprehensive statistics including revenue tracking and user metrics.
+- **Historical Data Visualization**: 7-day crowd pattern charts with hourly breakdowns.
+
+**Sustainability & Fairness Focus**
+- Reduces unnecessary food preparation and wastage - Demand forecasting enables accurate preparation planning (in the upcoming sprints).
+- Ensures fair serving order and transparent allocation - Token-based system prevents queue jumping (in the upcoming sprints).
+- Supports balanced resource usage during peak hours - Staff recommendations optimize service delivery (in the upcoming sprints).
+- Promotes ethical food service operations - Data-driven decisions reduce environmental impact (in the upcoming sprints).
+
+### API Endpoints
+
+**Authentication**
 - `POST /api/auth/register` - Register new user
 - `POST /api/auth/login` - User login
 
-### Bookings
+**Bookings**
 - `GET /api/bookings` - Get user bookings
 - `POST /api/bookings` - Create new booking
 - `PUT /api/bookings/:id` - Update booking status
 - `DELETE /api/bookings/:id` - Cancel booking
 
-### Menu
+**Menu**
 - `GET /api/menu` - Get all menu items
 - `POST /api/menu` - Add menu item (Admin only)
 - `PUT /api/menu/:id` - Update menu item (Admin only)
 - `DELETE /api/menu/:id` - Delete menu item (Admin only)
 
-### Staff
+**Crowd Analytics**
+- `GET /api/crowd/current` - Get current crowd level
+- `GET /api/crowd/patterns` - Get historical crowd patterns
+- `GET /api/crowd/predictions` - Get crowd predictions
+- `GET /api/crowd/waiting-time` - Get estimated waiting time
+
+**Staff**
 - `GET /api/staff/orders` - Get pending orders
 - `PUT /api/staff/orders/:id` - Update order status
+- `GET /api/staff/dashboard` - Get staff dashboard data
+- `POST /api/staff/call-token` - Call next token
 
-### Admin
+**Admin**
 - `GET /api/admin/stats` - Get dashboard statistics
 - `GET /api/admin/users` - Get all users
 - `PUT /api/admin/users/:id` - Update user details
+- `GET /api/admin/crowd-analytics` - Get detailed crowd analytics
+- `GET /api/admin/export-report` - Export data as CSV
 
-## User Roles
+## Future Scope
 
-### Student
-- Browse menu items
-- Place food orders
-- View booking history
-- Track order status
-- Manage profile
-
-### Staff
-- View pending orders
-- Update order status (preparing, ready, completed)
-- Manage order queue
-- View order details
-
-### Administrator
-- Full system access
-- Manage menu items (add, edit, delete)
-- View analytics and statistics
-- Manage users
-- Monitor system performance
-- Track revenue and bookings
+- **AI-based demand forecasting for preparation planning**: Machine learning models to predict meal demand.
+- **Improved crowd and waiting time prediction**: Enhanced algorithms using weather and academic calendar data.
+- **Integration with weather APIs**: Factor weather conditions into demand forecasting.
+- **Academic schedule integration**: Adjust predictions based on exam periods and class schedules.
+- **Sustainability Reports**: Sustainability reports with waste tracking and Demand based food preparation.
 
 ## Contributing
 
-Contributions are welcome. Please follow these steps:
+Contributions are welcome! Please follow these steps:
 
 1. Fork the repository
-2. Create a feature branch
-3. Commit your changes
-4. Push to the branch
-5. Open a pull request
+2. Create a feature branch (`git checkout -b feature/YourFeature`)
+3. Commit your changes (`git commit -m 'Add YourFeature'`)
+4. Push to the branch (`git push origin feature/YourFeature`)
+5. Open a Pull Request
 
 ## License
 
-This project is licensed under the ISC License.
+This project is licensed under the MIT License.
 
-## Contact
+## Acknowledgments
 
-For questions or support, please open an issue in the repository.
-
-correct the flowchart properly in this repo how to place that
+This system is designed with a focus on sustainability, fairness, and efficiency in cafeteria operations. By leveraging data-driven insights and token-based queue management, we aim to create a better dining experience while minimizing food waste and promoting equitable service delivery.
