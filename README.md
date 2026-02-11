@@ -154,7 +154,7 @@ smart-cafetria-model-2/
 
 ## Project Architecture
 
-```
+```mermaid
 flowchart TD
 
     %% Client Layer
@@ -182,8 +182,8 @@ flowchart TD
     end
 
     %% Flow
-    A -->|HTTPS| D
-    B -->|HTTPS| D
+    A --> D
+    B --> D
 
     D --> E
     E --> F
@@ -202,7 +202,24 @@ flowchart TD
     K --> M
     L --> M
 ```
+## Component Description
 
+1. **Frontend (Client Layer)**:
+   - Built with React Native & Expo.
+   - Handles UI rendering, user interactions, and state management (Context API).
+   - Communicates with the backend via RESTful API calls using Axios.
+
+2. **Backend (Server Layer)**:
+   - Node.js runtime with Express framework.
+   - **Middleware**: Handles JWT authentication (`auth.js`) and role-based access control (`roleCheck.js`).
+   - **Controllers**: Contain business logic for different modules (Auth, Booking, Menu, etc.).
+   - **Routes**: Define API endpoints and map them to controllers.
+
+3. **Database (Data Layer)**:
+   - MongoDB Atlas (Cloud NoSQL Database).
+   - Stores data for Users, Bookings, Menu Items, Slots, and Queues.
+   - Mongoose ODM is used for schema definition and data validation.
+  
 ## Getting Started
 
 ### Prerequisites
@@ -335,4 +352,5 @@ This project is licensed under the ISC License.
 ## Contact
 
 For questions or support, please open an issue in the repository.
+
 
