@@ -8,45 +8,29 @@ import {
     Platform,
     ScrollView,
     TouchableOpacity,
+    ImageBackground,
+    Dimensions,
 } from 'react-native';
 import { useAuth } from '../../context/AuthContext';
 import Button from '../../components/common/Button';
 import ErrorMessage from '../../components/common/ErrorMessage';
 import { colors } from '../../styles/colors';
-import { typography } from '../../styles/typography';
+import { LinearGradient } from 'expo-linear-gradient';
+import { Ionicons } from '@expo/vector-icons';
 
-/*
- * LoginScreen
- * -----------
- * This screen handles user authentication.
- * It's the entry point for existing users (students, staff, admin).
- * 
- * Key Features:
- * 1. Simple form with Email & Password inputs.
- * 2. Integration with AuthContext to managing global session state.
- * 3. Input validation to prevent empty submissions.
- * 4. User-friendly error messages if login fails.
- */
+const { width } = Dimensions.get('window');
+const isWeb = Platform.OS === 'web';
+const isLargeScreen = width > 768;
+
 const LoginScreen = ({ navigation }) => {
-    // Local state for form inputs
     const [email, setEmail] = useState('');
     const [password, setPassword] = useState('');
-
-    // UI state for loading indicator and error display
     const [loading, setLoading] = useState(false);
     const [error, setError] = useState('');
 
-    // Accessing the global 'login' function from our Auth Context
     const { login } = useAuth();
 
-    /**
-     * Handles the login logic.
-     * 1. Validates inputs.
-     * 2. Calls the backend API via AuthContext.
-     * 3. Navigation is handled automatically by AppNavigator based on the 'user' state update.
-     */
     const handleLogin = async () => {
-        // Validation: Ensure fields aren't empty
         if (!email || !password) {
             setError('Please fill in all fields');
             return;
@@ -55,139 +39,279 @@ const LoginScreen = ({ navigation }) => {
         setLoading(true);
         setError('');
 
-        // Attempt login
         const result = await login(email, password);
 
         if (!result.success) {
-            // If login fails, show the error message from backend
             setError(result.error);
             setLoading(false);
         }
-        // If success, 'user' state in AuthContext changes to a valid object,
-        // causing AppNavigator to switch from AuthStack to the Main Tab Navigator.
     };
 
     return (
-        /* 
-         * KeyboardAvoidingView:
-         * Essential for form screens. It pushes the content up when the 
-         * virtual keyboard opens, so the input fields aren't hidden.
-         */
-        <KeyboardAvoidingView
-            behavior={Platform.OS === 'ios' ? 'padding' : 'height'}
-            style={styles.container}
+        <LinearGradient
+            colors={['#F3E9DC', '#5E3023']}
+            style={styles.backgroundImage}
+            start={{ x: 0, y: 0 }}
+            end={{ x: 1, y: 1 }}
         >
-            <ScrollView contentContainerStyle={styles.scrollContent}>
-                <View style={styles.header}>
-                    <Text style={styles.title}>Smart Cafeteria</Text>
-                    <Text style={styles.subtitle}>Login to your account</Text>
-                </View>
+            <KeyboardAvoidingView
+                behavior={Platform.OS === 'ios' ? 'padding' : 'height'}
+                style={styles.container}
+            >
+                <View style={styles.centeredCard}>
+                    {/* Left Panel - Image/Branding */}
+                    {isLargeScreen && (
+                        <View style={styles.leftPanel}>
+                            <ImageBackground
+                                source={require('../../../assets/images/food/cafeteria_bg.png')}
+                                style={styles.imageBackground}
+                                resizeMode="cover"
+                            >
+                                <LinearGradient
+                                    colors={['rgba(94, 48, 35, 0.85)', 'rgba(61, 31, 23, 0.9)']}
+                                    style={styles.imageOverlay}
+                                >
+                                    <View style={styles.brandingContent}>
+                                        <Ionicons name="restaurant" size={50} color="#FFF" />
+                                        <Text style={styles.brandTitle}>Smart Cafeteria</Text>
+                                        <Text style={styles.brandSubtitle}>
+                                            Your Digital Dining Experience
+                                        </Text>
+                                    </View>
+                                </LinearGradient>
+                            </ImageBackground>
+                        </View>
+                    )}
 
-                <View style={styles.form}>
-                    {/* Reusable ErrorMessage component for consistent styling */}
-                    <ErrorMessage message={error} />
-
-                    <Text style={styles.label}>Email</Text>
-                    <TextInput
-                        style={styles.input}
-                        placeholder="Enter your email"
-                        value={email}
-                        onChangeText={setEmail}
-                        keyboardType="email-address"
-                        autoCapitalize="none" // Important for emails
-                        autoCorrect={false}
-                    />
-
-                    <Text style={styles.label}>Password</Text>
-                    <TextInput
-                        style={styles.input}
-                        placeholder="Enter your password"
-                        value={password}
-                        onChangeText={setPassword}
-                        secureTextEntry // Hides characters
-                        autoCapitalize="none"
-                    />
-
-                    {/* Custom Button component that handles loading state internally */}
-                    <Button
-                        title="Login"
-                        onPress={handleLogin}
-                        loading={loading}
-                        style={styles.loginButton}
-                    />
-
-                    {/* Navigation Link to Registration Screen */}
-                    <TouchableOpacity
-                        onPress={() => navigation.navigate('Register')}
-                        style={styles.registerLink}
+                    {/* Right Panel - Form */}
+                    <ScrollView
+                        style={styles.rightPanel}
+                        contentContainerStyle={styles.formContainer}
+                        showsVerticalScrollIndicator={false}
                     >
-                        <Text style={styles.registerText}>
-                            Don't have an account? <Text style={styles.registerTextBold}>Register</Text>
-                        </Text>
-                    </TouchableOpacity>
+                        <View style={styles.formContent}>
+                            <View style={styles.header}>
+                                <Text style={styles.welcomeText}>Welcome Back</Text>
+                                <Text style={styles.subtitle}>Login to your account</Text>
+                            </View>
+
+                            <ErrorMessage message={error} />
+
+                            <View style={styles.formFields}>
+                                <View style={styles.inputWrapper}>
+                                    <Text style={styles.label}>Email Address</Text>
+                                    <View style={styles.inputContainer}>
+                                        <Ionicons name="mail-outline" size={20} color={colors.brownie} />
+                                        <TextInput
+                                            style={styles.input}
+                                            placeholder="Enter your email"
+                                            placeholderTextColor="#999"
+                                            value={email}
+                                            onChangeText={setEmail}
+                                            keyboardType="email-address"
+                                            autoCapitalize="none"
+                                            autoCorrect={false}
+                                        />
+                                    </View>
+                                </View>
+
+                                <View style={styles.inputWrapper}>
+                                    <Text style={styles.label}>Password</Text>
+                                    <View style={styles.inputContainer}>
+                                        <Ionicons name="lock-closed-outline" size={20} color={colors.brownie} />
+                                        <TextInput
+                                            style={styles.input}
+                                            placeholder="Enter your password"
+                                            placeholderTextColor="#999"
+                                            value={password}
+                                            onChangeText={setPassword}
+                                            secureTextEntry
+                                            autoCapitalize="none"
+                                        />
+                                    </View>
+                                </View>
+
+                                <Button
+                                    title="Login"
+                                    onPress={handleLogin}
+                                    loading={loading}
+                                    style={styles.loginButton}
+                                />
+
+                                <View style={styles.divider}>
+                                    <View style={styles.dividerLine} />
+                                    <Text style={styles.dividerText}>or</Text>
+                                    <View style={styles.dividerLine} />
+                                </View>
+
+                                <TouchableOpacity
+                                    onPress={() => navigation.navigate('Register')}
+                                    style={styles.signupLink}
+                                >
+                                    <Text style={styles.signupText}>
+                                        Don't have an account? <Text style={styles.signupTextBold}>Sign Up</Text>
+                                    </Text>
+                                </TouchableOpacity>
+                            </View>
+                        </View>
+                    </ScrollView>
                 </View>
-            </ScrollView>
-        </KeyboardAvoidingView>
+            </KeyboardAvoidingView>
+        </LinearGradient>
     );
 };
 
 const styles = StyleSheet.create({
+    backgroundImage: {
+        flex: 1,
+        width: '100%',
+        height: '100%',
+        justifyContent: 'center',
+        alignItems: 'center',
+    },
     container: {
         flex: 1,
-        backgroundColor: colors.background,
-    },
-    scrollContent: {
-        flexGrow: 1,
+        width: '100%',
         justifyContent: 'center',
+        alignItems: 'center',
         padding: 20,
     },
-    header: {
-        alignItems: 'center',
-        marginBottom: 40,
+    centeredCard: {
+        flexDirection: isLargeScreen ? 'row' : 'column',
+        width: '100%',
+        maxWidth: 900,
+        height: isLargeScreen ? 600 : 'auto',
+        backgroundColor: '#fff',
+        borderRadius: 20,
+        overflow: 'hidden',
+        shadowColor: "#000",
+        shadowOffset: {
+            width: 0,
+            height: 10,
+        },
+        shadowOpacity: 0.3,
+        shadowRadius: 20,
+        elevation: 10,
     },
-    title: {
-        ...typography.h1,
+    leftPanel: {
+        flex: 1,
+        width: '50%',
+    },
+    imageBackground: {
+        flex: 1,
+        width: '100%',
+        height: '100%',
+    },
+    imageOverlay: {
+        flex: 1,
+        justifyContent: 'center',
+        alignItems: 'center',
+        padding: 40,
+    },
+    brandingContent: {
+        alignItems: 'center',
+    },
+    brandTitle: {
+        fontSize: 32,
+        fontWeight: 'bold',
+        color: '#FFF',
+        marginTop: 20,
+        marginBottom: 10,
+        textAlign: 'center',
+    },
+    brandSubtitle: {
+        fontSize: 16,
+        color: '#F3E9DC',
+        textAlign: 'center',
+        opacity: 0.9,
+    },
+    rightPanel: {
+        flex: 1,
+        backgroundColor: '#FAFAFA',
+    },
+    formContainer: {
+        flexGrow: 1,
+        justifyContent: 'center',
+        padding: 40,
+    },
+    formContent: {
+        width: '100%',
+        alignSelf: 'center',
+    },
+    header: {
+        marginBottom: 30,
+        alignItems: isLargeScreen ? 'flex-start' : 'center',
+    },
+    welcomeText: {
+        fontSize: 28,
+        fontWeight: 'bold',
         color: colors.brownie,
         marginBottom: 8,
     },
     subtitle: {
-        ...typography.body,
-        color: colors.gray,
+        fontSize: 14,
+        color: '#666',
     },
-    form: {
+    formFields: {
         width: '100%',
-        maxWidth: 400,
-        alignSelf: 'center',
+    },
+    inputWrapper: {
+        marginBottom: 20,
     },
     label: {
-        ...typography.body,
+        fontSize: 14,
+        fontWeight: '600',
         color: colors.brownie,
         marginBottom: 8,
-        fontWeight: '600',
+    },
+    inputContainer: {
+        flexDirection: 'row',
+        alignItems: 'center',
+        backgroundColor: '#FFF',
+        borderRadius: 8,
+        paddingHorizontal: 16,
+        height: 50,
+        borderWidth: 1,
+        borderColor: '#E0E0E0',
     },
     input: {
-        backgroundColor: colors.white,
-        borderWidth: 1,
-        borderColor: colors.brownieLight,
-        borderRadius: 8,
-        padding: 12,
+        flex: 1,
+        marginLeft: 12,
         fontSize: 16,
-        marginBottom: 16,
+        color: '#333',
+        ...(Platform.OS === 'web' ? { outlineStyle: 'none' } : {}),
     },
     loginButton: {
-        marginTop: 8,
+        marginTop: 10,
+        height: 50,
+        borderRadius: 8,
+        backgroundColor: colors.brownie,
     },
-    registerLink: {
-        marginTop: 20,
+    divider: {
+        flexDirection: 'row',
+        alignItems: 'center',
+        marginVertical: 25,
+    },
+    dividerLine: {
+        flex: 1,
+        height: 1,
+        backgroundColor: '#E0E0E0',
+    },
+    dividerText: {
+        marginHorizontal: 16,
+        color: '#999',
+        fontSize: 14,
+    },
+    signupLink: {
         alignItems: 'center',
     },
-    registerText: {
-        ...typography.body,
-        color: colors.gray,
+    signupText: {
+        fontSize: 14,
+        color: '#666',
     },
-    registerTextBold: {
+    signupTextBold: {
         color: colors.brownie,
-        fontWeight: 'bold',
+        fontWeight: '600',
     },
 });
 
