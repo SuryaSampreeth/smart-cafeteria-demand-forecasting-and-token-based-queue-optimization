@@ -209,8 +209,8 @@ flowchart TD
     end
 
     %% Flow
-    A -->|HTTPS| D
-    B -->|HTTPS| D
+    A --> D
+    B --> D
 
     D --> E
     E --> F
@@ -457,5 +457,6 @@ This project is licensed under the MIT License.
 ## Acknowledgments
 
 This system is designed with a focus on sustainability, fairness, and efficiency in cafeteria operations. By leveraging data-driven insights and token-based queue management, we aim to create a better dining experience while minimizing food waste and promoting equitable service delivery.
+
 
 
