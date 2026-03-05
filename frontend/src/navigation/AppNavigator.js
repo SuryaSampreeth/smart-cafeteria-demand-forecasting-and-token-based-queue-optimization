@@ -27,6 +27,10 @@ import AdminHomeScreen from '../screens/admin/AdminHomeScreen';
 import ManageStaffScreen from '../screens/admin/ManageStaffScreen';
 import ManageMenuScreen from '../screens/admin/ManageMenuScreen';
 import AdminCrowdAnalytics from '../screens/admin/AdminCrowdAnalytics';
+import DemandForecastScreen from '../screens/admin/DemandForecastScreen';
+import WasteTrackingScreen from '../screens/admin/WasteTrackingScreen';
+import SustainabilityScreen from '../screens/admin/SustainabilityScreen';
+import DataBackupScreen from '../screens/admin/DataBackupScreen';
 
 import { colors } from '../styles/colors';
 import { USER_ROLES } from '../utils/constants';
@@ -109,6 +113,20 @@ const StaffTabs = () => (
 );
 
 /*
+ * Admin Home Stack
+ * ----------------
+ * Houses the Admin Dashboard and its drill-down advanced feature screens.
+ */
+const AdminHomeStack = () => (
+    <Stack.Navigator screenOptions={{ headerShown: false }}>
+        <Stack.Screen name="AdminDashboardMain" component={AdminHomeScreen} />
+        <Stack.Screen name="WasteTracking" component={WasteTrackingScreen} />
+        <Stack.Screen name="Sustainability" component={SustainabilityScreen} />
+        <Stack.Screen name="DataBackup" component={DataBackupScreen} />
+    </Stack.Navigator>
+);
+
+/*
  * Admin Tabs
  * ----------
  * Screens accessible only to ADMIN users.
@@ -116,10 +134,11 @@ const StaffTabs = () => (
  */
 const AdminTabs = () => (
     <Tab.Navigator screenOptions={getTabScreenOptions()}>
-        <Tab.Screen name="Dashboard" component={AdminHomeScreen} />
+        <Tab.Screen name="Dashboard" component={AdminHomeStack} />
         <Tab.Screen name="Manage Staff" component={ManageStaffScreen} />
         <Tab.Screen name="Manage Menu" component={ManageMenuScreen} />
         <Tab.Screen name="Analytics" component={AdminCrowdAnalytics} />
+        <Tab.Screen name="Forecast" component={DemandForecastScreen} />
     </Tab.Navigator>
 );
 
