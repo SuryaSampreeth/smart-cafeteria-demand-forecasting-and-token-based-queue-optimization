@@ -73,6 +73,7 @@ export const authAPI = {
     register: (data) => api.post('/auth/register', data),
     login: (data) => api.post('/auth/login', data),
     getMe: () => api.get('/auth/me'),
+    updateProfile: (data) => api.put('/auth/update-profile', data),
 };
 
 // ==================== BOOKING API ====================
@@ -121,6 +122,9 @@ export const adminAPI = {
     getAnalytics: () => api.get('/admin/analytics'),
     getSlotWiseData: () => api.get('/admin/analytics/slot-wise'),
     getStaffPerformance: () => api.get('/admin/analytics/staff-performance'),
+    getWasteTracking: () => api.get('/admin/features/waste-tracking'),
+    getSustainabilityReport: () => api.get('/admin/features/sustainability'),
+    triggerDataBackup: () => api.post('/admin/features/data-backup'),
 };
 
 /**
@@ -190,6 +194,23 @@ export const crowdAPI = {
     triggerAlertCheck: () => api.post('/crowd/admin/check-alerts'),
 };
 
+// ==================== DEMAND FORECAST API ====================
+
+/*
+ * Demand Forecast API
+ * -------------------
+ * ML-based demand forecasting endpoints (admin only).
+ */
+export const demandForecastAPI = {
+    getHealth: () => api.get('/demand-forecast/health'),
+    getDailyForecast: (days) => api.get('/demand-forecast/daily', { params: { days } }),
+    getWeeklyForecast: (weeks) => api.get('/demand-forecast/weekly', { params: { weeks } }),
+    getMonthlyForecast: (months) => api.get('/demand-forecast/monthly', { params: { months } }),
+    getAccuracy: () => api.get('/demand-forecast/accuracy'),
+    getHistorical: () => api.get('/demand-forecast/historical'),
+    triggerRetrain: () => api.post('/demand-forecast/retrain'),
+};
+
 /**
  * Default Export: Unified API Object
  * Combines the axios instance with all service modules for easy access.
@@ -201,6 +222,7 @@ export default {
     // Auth Helpers
     register: (data) => authAPI.register(data),
     login: (data) => authAPI.login(data),
+    updateProfile: (data) => authAPI.updateProfile(data),
 
     // Booking Helpers
     createBooking: (data) => bookingAPI.create(data),
@@ -229,4 +251,12 @@ export default {
 
         return `${config.API_URL}/crowd/admin/export?${params.toString()}`;
     },
+
+    // Demand Forecast Helpers
+    getDailyForecast: (days) => demandForecastAPI.getDailyForecast(days),
+    getWeeklyForecast: (weeks) => demandForecastAPI.getWeeklyForecast(weeks),
+    getMonthlyForecast: (months) => demandForecastAPI.getMonthlyForecast(months),
+    getForecastAccuracy: () => demandForecastAPI.getAccuracy(),
+    getForecastHistorical: () => demandForecastAPI.getHistorical(),
+    triggerModelRetrain: () => demandForecastAPI.triggerRetrain(),
 };
