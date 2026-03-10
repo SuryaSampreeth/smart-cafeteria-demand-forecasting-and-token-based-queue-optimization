@@ -40,30 +40,77 @@ Campus cafeterias often experience issues such as long waiting queues, uneven cr
 
 ```mermaid
 flowchart TD
-    subgraph ClientLayer ["Client Layer (Frontend)"]
+
+    %% Client Layer
+    subgraph Client
         A[Mobile App - Expo]
         B[Web Dashboard - Expo]
     end
 
-    subgraph ServiceLayer ["Service Layer (Backend)"]
-        D[Express API Gateway]
-        E[Auth & Role Middleware]
-        F[Background Analytics Workers]
-        G[ML Forecast Service - Flask]
+    %% Backend Layer
+    subgraph Backend
+        D[Express Server]
+        E[Auth Middleware]
+        F[Role Middleware]
+
+        G[Auth Controller]
+        H[Booking Controller]
+        I[Menu Controller]
+        J[Crowd Controller]
+        K[Admin Controller]
+        L[Staff Controller]
+
+        W[Waste & Sustainability Analytics]
     end
 
-    subgraph DataLayer ["Data Layer"]
+    %% ML Service Layer
+    subgraph ML_Service
+        N[ML Forecast API - Flask]
+        O[Demand Forecast Model\nXGBoost / LSTM / SARIMA]
+    end
+
+    %% Database Layer
+    subgraph Database
         M[(MongoDB Atlas)]
-        P[ML Model Store - .pkl/.h5]
+        P[(Historical Data & Model Artifacts)]
     end
 
-    A <--> D
-    B <--> D
+    %% Client Requests
+    A --> D
+    B --> D
+
+    %% Middleware Flow
     D --> E
     E --> F
-    F <--> M
-    D <--> G
-    G <--> P
+
+    %% Controller Access
+    F --> G
+    F --> H
+    F --> I
+    F --> J
+    F --> K
+    F --> L
+
+    %% Database Connections
+    G --> M
+    H --> M
+    I --> M
+    J --> M
+    K --> M
+    L --> M
+
+    %% Sustainability & Waste Reports
+    H --> W
+    J --> W
+    W --> M
+
+    %% ML Forecasting
+    J --> N
+    N --> O
+    O --> P
+
+    %% Predictions Stored
+    N --> M
 ```
 
 ### Role Breakdown
@@ -213,3 +260,4 @@ Contributions are welcome! Please follow these steps:
 ## License
 
 This project is licensed under the MIT License.
+
