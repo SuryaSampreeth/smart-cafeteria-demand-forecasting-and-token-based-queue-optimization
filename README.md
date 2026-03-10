@@ -39,6 +39,7 @@ Campus cafeterias often experience issues such as long waiting queues, uneven cr
 ## 2. Project Architecture
 
 ```mermaid
+mermaid
 flowchart TD
 
     %% Client Layer
@@ -52,38 +53,26 @@ flowchart TD
         D[Express Server]
         E[Auth Middleware]
         F[Role Middleware]
-
         G[Auth Controller]
         H[Booking Controller]
         I[Menu Controller]
         J[Crowd Controller]
         K[Admin Controller]
         L[Staff Controller]
-
-        W[Waste & Sustainability Analytics]
-    end
-
-    %% ML Service Layer
-    subgraph ML_Service
-        N[ML Forecast API - Flask]
-        O[Demand Forecast Model\nXGBoost / LSTM / SARIMA]
     end
 
     %% Database Layer
     subgraph Database
         M[(MongoDB Atlas)]
-        P[(Historical Data & Model Artifacts)]
     end
 
-    %% Client Requests
+    %% Flow
     A --> D
     B --> D
 
-    %% Middleware Flow
     D --> E
     E --> F
 
-    %% Controller Access
     F --> G
     F --> H
     F --> I
@@ -91,26 +80,12 @@ flowchart TD
     F --> K
     F --> L
 
-    %% Database Connections
     G --> M
     H --> M
     I --> M
     J --> M
     K --> M
     L --> M
-
-    %% Sustainability & Waste Reports
-    H --> W
-    J --> W
-    W --> M
-
-    %% ML Forecasting
-    J --> N
-    N --> O
-    O --> P
-
-    %% Predictions Stored
-    N --> M
 ```
 
 ### Role Breakdown
@@ -260,4 +235,5 @@ Contributions are welcome! Please follow these steps:
 ## License
 
 This project is licensed under the MIT License.
+
 
