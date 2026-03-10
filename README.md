@@ -38,6 +38,8 @@ Campus cafeterias often experience issues such as long waiting queues, uneven cr
 
 ## 2. Project Architecture
 
+![Smart Cafeteria Architecture](uml_diagrams/arch.jpeg)
+
 
 
 ### Role Breakdown
@@ -187,6 +189,7 @@ Contributions are welcome! Please follow these steps:
 ## License
 
 This project is licensed under the MIT License.
+
 
 
 
