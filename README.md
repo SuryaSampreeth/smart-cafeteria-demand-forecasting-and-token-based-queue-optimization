@@ -38,55 +38,7 @@ Campus cafeterias often experience issues such as long waiting queues, uneven cr
 
 ## 2. Project Architecture
 
-```mermaid
-mermaid
-flowchart TD
 
-    %% Client Layer
-    subgraph Client
-        A[Mobile App - Expo]
-        B[Web Dashboard - Expo]
-    end
-
-    %% Backend Layer
-    subgraph Backend
-        D[Express Server]
-        E[Auth Middleware]
-        F[Role Middleware]
-        G[Auth Controller]
-        H[Booking Controller]
-        I[Menu Controller]
-        J[Crowd Controller]
-        K[Admin Controller]
-        L[Staff Controller]
-    end
-
-    %% Database Layer
-    subgraph Database
-        M[(MongoDB Atlas)]
-    end
-
-    %% Flow
-    A --> D
-    B --> D
-
-    D --> E
-    E --> F
-
-    F --> G
-    F --> H
-    F --> I
-    F --> J
-    F --> K
-    F --> L
-
-    G --> M
-    H --> M
-    I --> M
-    J --> M
-    K --> M
-    L --> M
-```
 
 ### Role Breakdown
 - **Frontend Developer** 
@@ -235,5 +187,6 @@ Contributions are welcome! Please follow these steps:
 ## License
 
 This project is licensed under the MIT License.
+
 
 
