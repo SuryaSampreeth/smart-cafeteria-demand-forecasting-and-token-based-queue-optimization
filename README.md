@@ -1,24 +1,42 @@
-# Smart Cafeteria – Comprehensive Developer Guide
-
-Welcome to the **Comprehensive Developer Guide** for the Smart Cafeteria Demand Forecasting and Token-Based Queue Optimisation System. This document serves as a central reference for Frontend, Backend, and Full-Stack developers.
+# Smart Cafeteria – Developer Documentation
 
 ---
 
+## Table of Contents
+
+## Table of Contents
+
+- [Project Overview & Objectives](#1-project-overview--objectives)
+- [Project Architecture](#2-project-architecture)
+- [Technology Stack](#3-technology-stack)
+- [Project Folder Structure](#4-project-folder-structure)
+- [Setup & Installation](#5-setup--installation)
+- [Key Features & Workflows](#6-key-features--workflows)
+- [API Reference](#7-api-reference-core-endpoints)
+- [Deployment Guide](#8-deployment-guide)
+- [Future Scope](#9-future-scope)
+- [Contributing](#10-contributing)
+- [License](#license)
+
+
 ## 1. Project Overview & Objectives
 
-The **Smart Cafeteria** is an intelligent ecosystem designed to optimize food service operations through data-driven insights. 
+### Problem Overview
 
-**Key Objectives:**
-- **Efficiency**: Reduce waiting times and overcrowding through token-based queue scheduling.
-- **Sustainability**: Minimize food waste by forecasting meal demand using AI/ML models.
-- **Transparency**: Provide real-time occupancy and wait-time dashboards for students and staff.
-- **Data-Driven Planning**: Enable administrators to allocate resources based on peak-hour analytics.
+Campus cafeterias often experience issues such as long waiting queues, uneven crowd distribution, inefficient resource utilization, and food wastage. Traditional systems typically operate on a first-come-first-served basis and lack mechanisms to predict demand or manage service flow effectively. This project aims to develop an **intelligent cafeteria management platform** that uses data-driven insights and predictive analytics to improve operational efficiency, reduce food waste, and enhance the overall dining experience for students. By integrating forecasting, scheduling, and real-time monitoring, the system helps both users and administrators make informed decisions about meal planning and service management.
+
+**Key objectives of the system include:**
+
+* Enabling students to **pre-book meal slots** to reduce queues and manage crowd flow.
+* Predicting **expected waiting times and crowd levels** using historical demand patterns, weather conditions, and academic schedules.
+* Applying **AI/ML-based forecasting** to estimate food demand and assist in preparation planning.
+* Implementing **token-based queue scheduling** to ensure organized and fair meal distribution.
+* Providing **real-time occupancy dashboards** for administrators to monitor cafeteria usage.
+* Ensuring **ethical and fair access to meal services** through transparent slot allocation.
 
 ---
 
 ## 2. Project Architecture
-
-The system follows a distributed architecture consisting of a Mobile Frontend, a Node.js API Gateway, and a Python Machine Learning Service.
 
 ```mermaid
 flowchart TD
@@ -49,9 +67,9 @@ flowchart TD
 ```
 
 ### Role Breakdown
-- **Frontend Developer**: Focuses on the Client Layer (UI/UX, State Management, Navigation).
-- **Backend Developer**: Focuses on the Service Layer (REST APIs, Database, Background Jobs, Security).
-- **Full-Stack/Integration**: Manages the bridge between layers, including API communication and the ML service integration.
+- **Frontend Developer** 
+- **Backend Developer**
+- **Frontend-Backend developer**
 
 ---
 
@@ -60,10 +78,10 @@ flowchart TD
 | Layer | Technology |
 | :--- | :--- |
 | **Frontend** | React Native (Expo), React Navigation, Context API, Axios, Chart Kit |
-| **Backend** | Node.js, Express.js, Mongoose ODM, JWT, bcryptjs |
-| **ML Service** | **Python, Flask, XGBoost, TensorFlow, Pandas, Scikit-learn** |
+| **Backend** | Node.js, Express.js, JWT, bcryptjs |
+| **ML Service** | **Python, Flask, TensorFlow, Pandas, Scikit-learn** |
 | **Database** | MongoDB Atlas |
-| **Dev Tools** | Nodemon, Git, Postman/Thunder Client |
+| **Dev Tools** | GitHub, Open-Project, Vercel, Render|
 
 ---
 
@@ -134,19 +152,18 @@ npx expo start
 
 ## 6. Key Features & Workflows
 
-### 🛡️ User Authentication & RBAC
+### User Authentication & RBAC
 - **Student**: Booking, live crowd monitor, historical patterns.
 - **Staff**: Queue management, peak-load alerts, serving speed recs.
 - **Admin**: Menu management, user control, system-wide analytics.
 
-### 📈 Crowd Monitoring & Forecasting
+### Crowd Monitoring & Forecasting
 1. **Real-time Tracking**: `crowdTrackingService.js` takes snapshots every 2 minutes.
-2. **Historical Analysis**: `crowdPredictionService.js` aggregates daily data at midnight.
-3. **ML Forecasting**: The Python service provides daily/weekly demand predictions using XGBoost and LSTM models.
+3. **ML Forecasting**: The Python service provides daily/weekly demand predictions using XGBoost and LSTM models and SARIMA models.
 
-### 🌱 Sustainability & Fairness
-- **Waste Reduction**: Demand forecasting allows cafeteria managers to prepare only what is needed.
-- **Fair Allocation**: The token-based system ensures "First-In, First-Served" (FIFS) integrity.
+### Sustainability & Fairness
+- **Waste & Sustainability Reports**: Waste and Sustainability Reports for the admin using the Cancelled, Served, Expired Bookings. `WasteTrackingScreen.js` and `SustainabilityScreen.js` handles this.
+- **Fair Allocation**: The token-based system ensures "First-In, First-Out" (FIFO) integrity.
 
 ---
 
@@ -162,11 +179,37 @@ npx expo start
 
 ---
 
-## 8. Contribution Guidelines
+## 8. Deployment Guide
 
-1. **Branching**: Use `feature/` or `fix/` prefixes for new branches.
-2. **API Logic**: Always update the `api.js` service layer when adding backend routes.
-3. **ML Updates**: When modifying models, run `python train.py` to update binaries in `ml_service/models/`.
+### Frontend
+Platform: **Vercel**  
+https://smart-cafeteria-web-deployment.vercel.app/
 
----
-*Note: This guide is a living document. For testing specifics, see `TESTING_GUIDE.md`.*
+### Backend
+Platform: **Render**  
+https://backend-api-rxpg.onrender.com/api
+
+### ML Service
+Platform: **Render**  
+https://ml-service-azkv.onrender.com/
+
+## 9. Future Scope
+
+1. Integration of online payment apps and wallets
+2. Personalized meal recommendations using AI
+3. Expansion to multiple campus cafeterias
+4. Dynamic pricing for waste reduction
+   
+## 10. Contributing
+
+Contributions are welcome! Please follow these steps:
+
+1. Fork the repository
+2. Create a feature branch (git checkout -b feature/YourFeature)
+3. Commit your changes (git commit -m 'Add YourFeature')
+4. Push to the branch (git push origin feature/YourFeature)
+5. Open a Pull Request
+
+## License
+
+This project is licensed under the MIT License.
